@@ -28,6 +28,25 @@ Use this workflow to generate valid ComfyUI workflows with live node discovery.
 
 5. Save the workflow to `workflows/<descriptive-name>.json`
 
+## Custom Node Recommendations
+
+If a user's workflow would benefit from nodes that aren't currently installed:
+
+1. **Inform the user** about the missing node pack and what it provides
+2. **Ask for permission** before suggesting installation
+3. **Provide installation instructions** (e.g., ComfyUI Manager, git clone, etc.)
+4. **After installation**, remind user to restart ComfyUI and run:
+   ```bash
+   python refresh-nodes.py
+   ```
+5. **Wait for refresh** before generating workflows using the new nodes
+
+Common useful node packs:
+- ComfyUI-VideoHelperSuite (VHS) - Video loading/saving
+- ComfyUI-Impact-Pack - Face detection, segmentation
+- ComfyUI-AnimateDiff - Animation generation
+- ComfyUI-WD14-Tagger - Image tagging
+
 ## Node Format Reference
 
 The compressed node format is:
