@@ -47,6 +47,37 @@ Common useful node packs:
 - ComfyUI-AnimateDiff - Animation generation
 - ComfyUI-WD14-Tagger - Image tagging
 
+## Creating New Custom Nodes
+
+If no existing node provides the required functionality, you can write a new custom node:
+
+1. **Propose the node** - Explain what it will do and why it's needed
+2. **Get user approval** before writing any code
+3. **Create the node** in `custom_nodes/<node_pack_name>/`:
+   - `__init__.py` with NODE_CLASS_MAPPINGS
+   - Node class with INPUT_TYPES, RETURN_TYPES, FUNCTION, CATEGORY
+4. **Restart ComfyUI** to load the new node
+5. **Run refresh-nodes.py** to update the node definitions
+6. **Verify the node appears** in the refreshed files before using it in workflows
+
+Example node structure:
+```python
+class MyCustomNode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {"image": ("IMAGE",)}}
+    
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "process"
+    CATEGORY = "custom"
+    
+    def process(self, image):
+        # Your logic here
+        return (image,)
+
+NODE_CLASS_MAPPINGS = {"MyCustomNode": MyCustomNode}
+```
+
 ## Node Format Reference
 
 The compressed node format is:
