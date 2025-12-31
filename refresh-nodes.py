@@ -60,7 +60,7 @@ def detect_comfyui_port(ports, timeout=2):
             url = f"http://localhost:{port}/object_info"
             response = urlopen(url, timeout=timeout)
             if response.status == 200:
-                print(f"✓ Found ComfyUI on port {port}")
+                print(f"[OK] Found ComfyUI on port {port}")
                 return port, response.read().decode('utf-8')
         except (URLError, TimeoutError, ConnectionRefusedError):
             print(f"  Port {port}: not responding")
@@ -224,7 +224,7 @@ def main():
         port, content = detect_comfyui_port(ports, config.get("connection_timeout", 2))
         
         if port is None:
-            print("\n✗ Could not find running ComfyUI instance.")
+            print("\n[ERROR] Could not find running ComfyUI instance.")
             print("  Make sure ComfyUI is running, or use -i to specify a JSON file.")
             return 1
         
@@ -254,7 +254,7 @@ def main():
         full_content = outputs[full_file]
         print(f"\nTotal: {len(full_content):,} bytes (~{len(full_content)//4:,} tokens)")
     
-    print("\n✓ Done!")
+    print("\n[OK] Done!")
     return 0
 
 
