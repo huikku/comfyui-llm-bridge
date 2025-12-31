@@ -104,8 +104,8 @@
     },
     "full_output": "full.txt",
     "default_port_order": [
-        8188,
         8000,
+        8188,
         8888
     ],
     "connection_timeout": 2

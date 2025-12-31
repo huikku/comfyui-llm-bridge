@@ -10,17 +10,17 @@ Use this workflow to generate valid ComfyUI workflows with live node discovery.
 // turbo
 1. Run the node refresh script to get current node definitions:
    ```bash
-   python llm-integration/refresh-nodes.py
+   python comfyui-llm-bridge/refresh-nodes.py
    ```
 
 2. Read the appropriate node definition file based on the task:
-   - For basic image generation: read `llm-integration/nodes/core.txt`
-   - For video workflows: also read `llm-integration/nodes/video.txt`
-   - For 3D model generation: also read `llm-integration/nodes/3d.txt`
-   - For segmentation/masking: also read `llm-integration/nodes/segmentation.txt`
-   - For API-based generation: also read `llm-integration/nodes/api.txt`
-   - For training workflows: also read `llm-integration/nodes/training.txt`
-   - If unsure, read `llm-integration/nodes/full.txt`
+   - For basic image generation: read `comfyui-llm-bridge/nodes/core.txt`
+   - For video workflows: also read `comfyui-llm-bridge/nodes/video.txt`
+   - For 3D model generation: also read `comfyui-llm-bridge/nodes/3d.txt`
+   - For segmentation/masking: also read `comfyui-llm-bridge/nodes/segmentation.txt`
+   - For API-based generation: also read `comfyui-llm-bridge/nodes/api.txt`
+   - For training workflows: also read `comfyui-llm-bridge/nodes/training.txt`
+   - If unsure, read `comfyui-llm-bridge/nodes/full.txt`
 
 3. Generate a ComfyUI workflow JSON using ONLY nodes from the loaded definitions.
 
