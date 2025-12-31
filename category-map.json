@@ -1,0 +1,112 @@
+{
+    "output_files": {
+        "core": {
+            "filename": "core.txt",
+            "description": "Essential nodes for basic workflows",
+            "categories": [
+                "loaders",
+                "sampling",
+                "conditioning",
+                "latent",
+                "image",
+                "mask",
+                "utils"
+            ]
+        },
+        "video": {
+            "filename": "video.txt",
+            "description": "Video generation and processing nodes",
+            "categories": [
+                "Video Helper Suite 🎥🅥🅗🅢",
+                "context",
+                "camera"
+            ],
+            "node_patterns": [
+                "Wan*",
+                "LTXV*",
+                "Cosmos*",
+                "Hunyuan*",
+                "Mochi*",
+                "AnimateDiff*",
+                "VHS_*"
+            ]
+        },
+        "3d": {
+            "filename": "3d.txt",
+            "description": "3D model generation and mesh operations",
+            "categories": [
+                "3d"
+            ],
+            "node_patterns": [
+                "Tripo*",
+                "Hy3D*",
+                "*Mesh*",
+                "*Voxel*",
+                "*GLB*"
+            ]
+        },
+        "segmentation": {
+            "filename": "segmentation.txt",
+            "description": "Segmentation, masking, and detection nodes",
+            "categories": [
+                "🧪AILab",
+                "SAM3",
+                "TBG",
+                "ImpactPack"
+            ],
+            "node_patterns": [
+                "SAM*",
+                "BiRefNet*",
+                "*Segment*",
+                "*Detector*",
+                "RMBG*"
+            ]
+        },
+        "api": {
+            "filename": "api.txt",
+            "description": "External API integration nodes",
+            "categories": [
+                "api node",
+                "api"
+            ],
+            "node_patterns": [
+                "Kling*",
+                "Runway*",
+                "Veo*",
+                "OpenAI*",
+                "Luma*",
+                "Stability*",
+                "Flux*",
+                "Ideogram*",
+                "Recraft*",
+                "Minimax*",
+                "Pixverse*",
+                "Gemini*"
+            ]
+        },
+        "training": {
+            "filename": "training.txt",
+            "description": "Model training and dataset nodes",
+            "categories": [
+                "training",
+                "dataset"
+            ]
+        },
+        "advanced": {
+            "filename": "advanced.txt",
+            "description": "Advanced model operations and testing",
+            "categories": [
+                "advanced",
+                "_for_testing",
+                "model_patches"
+            ]
+        }
+    },
+    "full_output": "full.txt",
+    "default_port_order": [
+        8188,
+        8000,
+        8888
+    ],
+    "connection_timeout": 2
+}

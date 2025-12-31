@@ -1,0 +1,690 @@
+# M=MODEL G=IMAGE C=CONDITIONING A=LATENT V=VAE P=CLIP S=STRING I=INT F=FLOAT B=BOOLEAN K=MASK T=CONTROL_NET L=LIST * for any other type
+# 3d
+@Load3D +model_file:L +image:LOAD_3D +width:I +height:I -image:G -mask:K -mesh_path:S -normal:G -lineart:G
+@Load3DAnimation +model_file:L +image:LOAD_3D_ANIMATION +width:I +height:I -image:G -mask:K -mesh_path:S -normal:G
+@Preview3D +model_file:S
+@Preview3DAnimation +model_file:S
+@VoxelToMeshBasic +voxel:VOXEL +threshold:F -MESH:MESH
+@SaveGLB +mesh:MESH +filename_prefix:S
+
+# Art Venture
+@ColorCorrectOfUtils +image:G +temperature:F +red:F +green:F +blue:F +hue:F +brightness:F +contrast:F +saturation:F +gamma:F +grain:F -IMAGE:G
+
+# Hunyuan3DWrapper
+@Hy3DModelLoader +model:L ?compile_args:HY3DCOMPILEARGS ?attention_mode:L ?cublas_ops:B -pipeline:HY3DMODEL -vae:HY3DVAE
+@Hy3DVAELoader +model_name:L -vae:HY3DVAE
+@Hy3DGenerateMesh +pipeline:HY3DMODEL +image:G +guidance_scale:F +steps:I +seed:I ?mask:K ?scheduler:L ?force_offload:B -latents:HY3DLATENT
+@Hy3DGenerateMeshMultiView +pipeline:HY3DMODEL +guidance_scale:F +steps:I +seed:I ?front:G ?left:G ?right:G ?back:G ?scheduler:L -latents:HY3DLATENT -image:G -mask:K
+@Hy3DExportMesh +trimesh:TRIMESH +filename_prefix:S +file_format:L ?save_file:B -glb_path:S
+@DownloadAndLoadHy3DDelightModel +model:L ?compile_args:HY3DCOMPILEARGS -delight_pipe:HY3DDIFFUSERSPIPE
+@DownloadAndLoadHy3DPaintModel +model:L ?compile_args:HY3DCOMPILEARGS -multiview_pipe:HY3DDIFFUSERSPIPE
+@Hy3DDelightImage +delight_pipe:HY3DDIFFUSERSPIPE +image:G +steps:I +width:I +height:I +cfg_image:F +seed:I ?scheduler:NOISESCHEDULER -image:G
+@Hy3DRenderMultiView +trimesh:TRIMESH +render_size:I +texture_size:I ?camera_config:HY3DCAMERA ?normal_space:L -normal_maps:G -position_maps:G -renderer:MESHRENDER -masks:K
+@Hy3DBakeFromMultiview +images:G +renderer:MESHRENDER ?camera_config:HY3DCAMERA -texture:G -mask:K -renderer:MESHRENDER
+@Hy3DTorchCompileSettings +backend:L +fullgraph:B +mode:L +dynamic:B +dynamo_cache_size_limit:I +compile_transformer:B +compile_vae:B -torch_compile_args:HY3DCOMPILEARGS
+@Hy3DPostprocessMesh +trimesh:TRIMESH +remove_floaters:B +remove_degenerate_faces:B +reduce_faces:B +max_facenum:I +smooth_normals:B -trimesh:TRIMESH
+@Hy3DLoadMesh +glb_path:S -trimesh:TRIMESH
+@Hy3DUploadMesh +mesh:L -trimesh:TRIMESH
+@Hy3DCameraConfig +camera_azimuths:S +camera_elevations:S +view_weights:S +camera_distance:F +ortho_scale:F -camera_config:HY3DCAMERA
+@Hy3DMeshUVWrap +trimesh:TRIMESH -trimesh:TRIMESH
+@Hy3DSampleMultiView +pipeline:HY3DDIFFUSERSPIPE +ref_image:G +normal_maps:G +position_maps:G +view_size:I +steps:I +seed:I ?camera_config:HY3DCAMERA ?scheduler:NOISESCHEDULER ?denoise_strength:F ?samples:A -image:G
+@Hy3DMeshVerticeInpaintTexture +texture:G +mask:K +renderer:MESHRENDER -texture:G -mask:K -renderer:MESHRENDER
+@Hy3DApplyTexture +texture:G +renderer:MESHRENDER -trimesh:TRIMESH
+@CV2InpaintTexture +texture:G +mask:K +inpaint_radius:I +inpaint_method:L -texture:G
+@Hy3DRenderMultiViewDepth +trimesh:TRIMESH +render_size:I +texture_size:I ?camera_config:HY3DCAMERA -depth_maps:G -masks:K
+@Hy3DGetMeshPBRTextures +trimesh:TRIMESH +texture:L -image:G
+@Hy3DSetMeshPBRTextures +trimesh:TRIMESH +image:G +texture:L -trimesh:TRIMESH
+@Hy3DSetMeshPBRAttributes +trimesh:TRIMESH +baseColorFactor:F +emissiveFactor:F +metallicFactor:F +roughnessFactor:F +doubleSided:B -trimesh:TRIMESH
+@Hy3DVAEDecode +vae:HY3DVAE +latents:HY3DLATENT +box_v:F +octree_resolution:I +num_chunks:I +mc_level:F +mc_algo:L ?enable_flash_vdm:B ?force_offload:B -trimesh:TRIMESH
+@Hy3DRenderSingleView +trimesh:TRIMESH +render_type:L +render_size:I +camera_type:L +camera_distance:F +pan_x:F +pan_y:F +ortho_scale:F +azimuth:F +elevation:F +bg_color:S -image:G -mask:K
+@Hy3DDiffusersSchedulerConfig +pipeline:HY3DDIFFUSERSPIPE +scheduler:L +sigmas:L -diffusers_scheduler:NOISESCHEDULER
+@Hy3DIMRemesh +trimesh:TRIMESH +merge_vertices:B +vertex_count:I +smooth_iter:I +align_to_boundaries:B +triangulate_result:B +max_facenum:I -trimesh:TRIMESH
+@Hy3DBPT +trimesh:TRIMESH +enable_bpt:B +seed:I +temperature:F +pc_num:I +samples:I -trimesh:TRIMESH
+@Hy3DMeshInfo +trimesh:TRIMESH -trimesh:TRIMESH -vertices:I -faces:I
+@Hy3DFastSimplifyMesh +trimesh:TRIMESH +target_count:I +aggressiveness:I +max_iterations:I +update_rate:I +preserve_border:B +lossless:B +threshold_lossless:F -trimesh:TRIMESH
+@Hy3DNvdiffrastRenderer +trimesh:TRIMESH +render_type:L +width:I +height:I +ssaa:I +num_frames:I +camera_distance:F +yaw:F +pitch:F +fov:F +near:F +far:F +pan_x:F +pan_y:F -image:G -mask:K
+
+# ImpactPack
+@SAMLoader +model_name:L +device_mode:L -SAM_MODEL:Q
+@CLIPSegDetectorProvider +text:S +blur:F +threshold:F +dilation_factor:I -BBOX_DETECTOR:X
+@ONNXDetectorProvider +model_name:L -BBOX_DETECTOR:X
+@BitwiseAndMaskForEach +base_segs:SEGS +mask_segs:SEGS -SEGS:SEGS
+@SubtractMaskForEach +base_segs:SEGS +mask_segs:SEGS -SEGS:SEGS
+@DetailerForEach +image:G +segs:SEGS +model:M +clip:P +vae:V +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +feather:I +noise_mask:B +force_inpaint:B +wildcard:S +cycle:I ?detailer_hook:DETAILER_HOOK ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -IMAGE:G
+@DetailerForEachDebug +image:G +segs:SEGS +model:M +clip:P +vae:V +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +feather:I +noise_mask:B +force_inpaint:B +wildcard:S +cycle:I ?detailer_hook:DETAILER_HOOK ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -image:G -cropped:G -cropped_refined:G -cropped_refined_alpha:G -cnet_images:G
+@DetailerForEachPipe +image:G +segs:SEGS +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +noise_mask:B +force_inpaint:B +basic_pipe:E +wildcard:S +refiner_ratio:F +cycle:I ?detailer_hook:DETAILER_HOOK ?refiner_basic_pipe_opt:E ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -image:G -segs:SEGS -basic_pipe:E -cnet_images:G
+@DetailerForEachDebugPipe +image:G +segs:SEGS +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +noise_mask:B +force_inpaint:B +basic_pipe:E +wildcard:S +refiner_ratio:F +cycle:I ?detailer_hook:DETAILER_HOOK ?refiner_basic_pipe_opt:E ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -image:G -segs:SEGS -basic_pipe:E -cropped:G -cropped_refined:G -cropped_refined_alpha:G -cnet_images:G
+@DetailerForEachPipeForAnimateDiff +image_frames:G +segs:SEGS +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +basic_pipe:E +refiner_ratio:F ?detailer_hook:DETAILER_HOOK ?refiner_basic_pipe_opt:E ?noise_mask_feather:I ?scheduler_func_opt:R -image:G -segs:SEGS -basic_pipe:E -cnet_images:G
+@SAMDetectorCombined +sam_model:Q +segs:SEGS +image:G +detection_hint:L +dilation:I +threshold:F +bbox_expansion:I +mask_hint_threshold:F +mask_hint_use_negative:L -MASK:K
+@SAMDetectorSegmented +sam_model:Q +segs:SEGS +image:G +detection_hint:L +dilation:I +threshold:F +bbox_expansion:I +mask_hint_threshold:F +mask_hint_use_negative:L -combined_mask:K -batch_masks:K
+@FaceDetailer +image:G +model:M +clip:P +vae:V +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +feather:I +noise_mask:B +force_inpaint:B +bbox_threshold:F +bbox_dilation:I +bbox_crop_factor:F +sam_detection_hint:L +sam_dilation:I +sam_threshold:F +sam_bbox_expansion:I +sam_mask_hint_threshold:F +sam_mask_hint_use_negative:L +drop_size:I +bbox_detector:X +wildcard:S +cycle:I ?sam_model_opt:Q ?segm_detector_opt:Z ?detailer_hook:DETAILER_HOOK ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -image:G -cropped_refined:G -cropped_enhanced_alpha:G -mask:K -detailer_pipe:D -cnet_images:G
+@FaceDetailerPipe +image:G +detailer_pipe:D +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +noise_mask:B +force_inpaint:B +bbox_threshold:F +bbox_dilation:I +bbox_crop_factor:F +sam_detection_hint:L +sam_dilation:I +sam_threshold:F +sam_bbox_expansion:I +sam_mask_hint_threshold:F +sam_mask_hint_use_negative:L +drop_size:I +refiner_ratio:F +cycle:I ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -image:G -cropped_refined:G -cropped_enhanced_alpha:G -mask:K -detailer_pipe:D -cnet_images:G
+@MaskDetailerPipe +image:G +mask:K +basic_pipe:E +guide_size:F +guide_size_for:B +max_size:F +mask_mode:B +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +crop_factor:F +drop_size:I +refiner_ratio:F +batch_size:I +cycle:I ?refiner_basic_pipe_opt:E ?detailer_hook:DETAILER_HOOK ?inpaint_model:B ?noise_mask_feather:I ?bbox_fill:B ?contour_fill:B ?scheduler_func_opt:R -image:G -cropped_refined:G -cropped_enhanced_alpha:G -basic_pipe:E -refiner_basic_pipe_opt:E
+@ToDetailerPipe +model:M +clip:P +vae:V +positive:C +negative:C +bbox_detector:X +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?sam_model_opt:Q ?segm_detector_opt:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@ToDetailerPipeSDXL +model:M +clip:P +vae:V +positive:C +negative:C +refiner_model:M +refiner_clip:P +refiner_positive:C +refiner_negative:C +bbox_detector:X +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?sam_model_opt:Q ?segm_detector_opt:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@FromDetailerPipe +detailer_pipe:D -model:M -clip:P -vae:V -positive:C -negative:C -bbox_detector:X -sam_model_opt:Q -segm_detector_opt:Z -detailer_hook:DETAILER_HOOK
+@FromDetailerPipe_v2 +detailer_pipe:D -detailer_pipe:D -model:M -clip:P -vae:V -positive:C -negative:C -bbox_detector:X -sam_model_opt:Q -segm_detector_opt:Z -detailer_hook:DETAILER_HOOK
+@FromDetailerPipeSDXL +detailer_pipe:D -detailer_pipe:D -model:M -clip:P -vae:V -positive:C -negative:C -bbox_detector:X -sam_model_opt:Q -segm_detector_opt:Z -detailer_hook:DETAILER_HOOK -refiner_model:M -refiner_clip:P -refiner_positive:C -refiner_negative:C
+@AnyPipeToBasic +any_pipe:* -basic_pipe:E
+@ToBasicPipe +model:M +clip:P +vae:V +positive:C +negative:C -basic_pipe:E
+@FromBasicPipe +basic_pipe:E -model:M -clip:P -vae:V -positive:C -negative:C
+@FromBasicPipe_v2 +basic_pipe:E -basic_pipe:E -model:M -clip:P -vae:V -positive:C -negative:C
+@BasicPipeToDetailerPipe +basic_pipe:E +bbox_detector:X +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?sam_model_opt:Q ?segm_detector_opt:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@BasicPipeToDetailerPipeSDXL +base_basic_pipe:E +refiner_basic_pipe:E +bbox_detector:X +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?sam_model_opt:Q ?segm_detector_opt:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@DetailerPipeToBasicPipe +detailer_pipe:D -base_basic_pipe:E -refiner_basic_pipe:E
+@EditBasicPipe +basic_pipe:E ?model:M ?clip:P ?vae:V ?positive:C ?negative:C -basic_pipe:E
+@EditDetailerPipe +detailer_pipe:D +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?model:M ?clip:P ?vae:V ?positive:C ?negative:C ?bbox_detector:X ?sam_model:Q ?segm_detector:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@EditDetailerPipeSDXL +detailer_pipe:D +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?model:M ?clip:P ?vae:V ?positive:C ?negative:C ?refiner_model:M ?refiner_clip:P ?refiner_positive:C ?refiner_negative:C ?bbox_detector:X ?sam_model:Q ?segm_detector:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@LatentPixelScale +samples:A +scale_method:L +scale_factor:F +vae:V +use_tiled_vae:B ?upscale_model_opt:U -LATENT:A -IMAGE:G
+@PixelKSampleUpscalerProvider +scale_method:L +model:M +vae:V +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +use_tiled_vae:B +tile_size:I ?upscale_model_opt:U ?pk_hook_opt:J ?scheduler_func_opt:R -UPSCALER:UPSCALER
+@PixelKSampleUpscalerProviderPipe +scale_method:L +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +use_tiled_vae:B +basic_pipe:E +tile_size:I ?upscale_model_opt:U ?pk_hook_opt:J ?scheduler_func_opt:R ?tile_cnet_opt:T ?tile_cnet_strength:F -UPSCALER:UPSCALER
+@IterativeLatentUpscale +samples:A +upscale_factor:F +steps:I +temp_prefix:S +upscaler:UPSCALER +step_mode:L -latent:A -vae:V
+@IterativeImageUpscale +pixels:G +upscale_factor:F +steps:I +temp_prefix:S +upscaler:UPSCALER +vae:V +step_mode:L -image:G
+@PixelTiledKSampleUpscalerProvider +scale_method:L +model:M +vae:V +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +tile_width:I +tile_height:I +tiling_strategy:L ?upscale_model_opt:U ?pk_hook_opt:J ?tile_cnet_opt:T ?tile_cnet_strength:F ?overlap:I -UPSCALER:UPSCALER
+@PixelTiledKSampleUpscalerProviderPipe +scale_method:L +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +tile_width:I +tile_height:I +tiling_strategy:L +basic_pipe:E ?upscale_model_opt:U ?pk_hook_opt:J ?tile_cnet_opt:T ?tile_cnet_strength:F -UPSCALER:UPSCALER
+@TwoSamplersForMaskUpscalerProvider +scale_method:L +full_sample_schedule:L +use_tiled_vae:B +base_sampler:KSAMPLER +mask_sampler:KSAMPLER +mask:K +vae:V +tile_size:I ?full_sampler_opt:KSAMPLER ?upscale_model_opt:U ?pk_hook_base_opt:J ?pk_hook_mask_opt:J ?pk_hook_full_opt:J -UPSCALER:UPSCALER
+@TwoSamplersForMaskUpscalerProviderPipe +scale_method:L +full_sample_schedule:L +use_tiled_vae:B +base_sampler:KSAMPLER +mask_sampler:KSAMPLER +mask:K +basic_pipe:E +tile_size:I ?full_sampler_opt:KSAMPLER ?upscale_model_opt:U ?pk_hook_base_opt:J ?pk_hook_mask_opt:J ?pk_hook_full_opt:J -UPSCALER:UPSCALER
+@PixelKSampleHookCombine +hook1:J +hook2:J -PK_HOOK:J
+@DenoiseScheduleHookProvider +schedule_for_iteration:L +target_denoise:F -PK_HOOK:J
+@StepsScheduleHookProvider +schedule_for_iteration:L +target_steps:I -PK_HOOK:J
+@CfgScheduleHookProvider +schedule_for_iteration:L +target_cfg:F -PK_HOOK:J
+@NoiseInjectionHookProvider +schedule_for_iteration:L +source:L +seed:I +start_strength:F +end_strength:F -PK_HOOK:J
+@UnsamplerHookProvider +model:M +steps:I +start_end_at_step:I +end_end_at_step:I +cfg:F +sampler_name:L +scheduler:L +normalize:L +positive:C +negative:C +schedule_for_iteration:L -PK_HOOK:J
+@CoreMLDetailerHookProvider +mode:L -DETAILER_HOOK:DETAILER_HOOK
+@PreviewDetailerHookProvider +quality:I -DETAILER_HOOK:DETAILER_HOOK -UPSCALER_HOOK:UPSCALER_HOOK
+@DetailerHookCombine +hook1:DETAILER_HOOK +hook2:DETAILER_HOOK -DETAILER_HOOK:DETAILER_HOOK
+@NoiseInjectionDetailerHookProvider +schedule_for_cycle:L +source:L +seed:I +start_strength:F +end_strength:F -DETAILER_HOOK:DETAILER_HOOK
+@UnsamplerDetailerHookProvider +model:M +steps:I +start_end_at_step:I +end_end_at_step:I +cfg:F +sampler_name:L +scheduler:L +normalize:L +positive:C +negative:C +schedule_for_cycle:L -DETAILER_HOOK:DETAILER_HOOK
+@DenoiseSchedulerDetailerHookProvider +schedule_for_cycle:L +target_denoise:F -DETAILER_HOOK:DETAILER_HOOK
+@SEGSOrderedFilterDetailerHookProvider +target:L +order:B +take_start:I +take_count:I -DETAILER_HOOK:DETAILER_HOOK
+@SEGSRangeFilterDetailerHookProvider +target:L +mode:B +min_value:I +max_value:I -DETAILER_HOOK:DETAILER_HOOK
+@SEGSLabelFilterDetailerHookProvider +segs:SEGS +preset:L +labels:S -DETAILER_HOOK:DETAILER_HOOK
+@VariationNoiseDetailerHookProvider +seed:I +strength:F -DETAILER_HOOK:DETAILER_HOOK
+@BitwiseAndMask +mask1:K +mask2:K -MASK:K
+@SubtractMask +mask1:K +mask2:K -MASK:K
+@AddMask +mask1:K +mask2:K -MASK:K
+@MaskRectArea -MASK:K
+@MaskRectAreaAdvanced -MASK:K
+@ImpactSegsAndMask +segs:SEGS +mask:K -SEGS:SEGS
+@ImpactSegsAndMaskForEach +segs:SEGS +masks:K -SEGS:SEGS
+@EmptySegs -SEGS:SEGS
+@ImpactFlattenMask +masks:K -MASK:K
+@MediaPipeFaceMeshToSEGS +image:G +crop_factor:F +bbox_fill:B +crop_min_size:I +drop_size:I +dilation:I +face:B +mouth:B +left_eyebrow:B +left_eye:B +left_pupil:B +right_eyebrow:B +right_eye:B +right_pupil:B -SEGS:SEGS
+@MaskToSEGS +mask:K +combined:B +crop_factor:F +bbox_fill:B +drop_size:I +contour_fill:B -SEGS:SEGS
+@MaskToSEGS_for_AnimateDiff +mask:K +combined:B +crop_factor:F +bbox_fill:B +drop_size:I +contour_fill:B -SEGS:SEGS
+@ToBinaryMask +mask:K +threshold:I -MASK:K
+@MasksToMaskList +masks:K -MASK:K
+@MaskListToMaskBatch +mask:K -MASK:K
+@ImageListToImageBatch +images:G -IMAGE:G
+@SetDefaultImageForSEGS +segs:SEGS +image:G +override:B -SEGS:SEGS
+@RemoveImageFromSEGS +segs:SEGS -SEGS:SEGS
+@BboxDetectorSEGS +bbox_detector:X +image:G +threshold:F +dilation:I +crop_factor:F +drop_size:I +labels:S ?detailer_hook:DETAILER_HOOK -SEGS:SEGS
+@SegmDetectorSEGS +segm_detector:Z +image:G +threshold:F +dilation:I +crop_factor:F +drop_size:I +labels:S ?detailer_hook:DETAILER_HOOK -SEGS:SEGS
+@ONNXDetectorSEGS +bbox_detector:X +image:G +threshold:F +dilation:I +crop_factor:F +drop_size:I +labels:S ?detailer_hook:DETAILER_HOOK -SEGS:SEGS
+@ImpactSimpleDetectorSEGS_for_AD +bbox_detector:X +image_frames:G +bbox_threshold:F +bbox_dilation:I +crop_factor:F +drop_size:I +sub_threshold:F +sub_dilation:I +sub_bbox_expansion:I +sam_mask_hint_threshold:F ?masking_mode:L ?segs_pivot:L ?sam_model_opt:Q ?segm_detector_opt:Z -SEGS:SEGS
+@ImpactSimpleDetectorSEGS +bbox_detector:X +image:G +bbox_threshold:F +bbox_dilation:I +crop_factor:F +drop_size:I +sub_threshold:F +sub_dilation:I +sub_bbox_expansion:I +sam_mask_hint_threshold:F ?post_dilation:I ?sam_model_opt:Q ?segm_detector_opt:Z -SEGS:SEGS
+@ImpactSimpleDetectorSEGSPipe +detailer_pipe:D +image:G +bbox_threshold:F +bbox_dilation:I +crop_factor:F +drop_size:I +sub_threshold:F +sub_dilation:I +sub_bbox_expansion:I +sam_mask_hint_threshold:F ?post_dilation:I -SEGS:SEGS
+@ImpactControlNetApplySEGS +segs:SEGS +control_net:T +strength:F ?segs_preprocessor:SEGS_PREPROCESSOR ?control_image:G -SEGS:SEGS
+@ImpactControlNetApplyAdvancedSEGS +segs:SEGS +control_net:T +strength:F +start_percent:F +end_percent:F ?segs_preprocessor:SEGS_PREPROCESSOR ?control_image:G ?vae:V -SEGS:SEGS
+@ImpactControlNetClearSEGS +segs:SEGS -SEGS:SEGS
+@ImpactIPAdapterApplySEGS +segs:SEGS +ipadapter_pipe:IPADAPTER_PIPE +weight:F +noise:F +weight_type:L +start_at:F +end_at:F +unfold_batch:B +faceid_v2:B +weight_v2:F +context_crop_factor:F +reference_image:G ?combine_embeds:L ?neg_image:G -SEGS:SEGS
+@ImpactDecomposeSEGS +segs:SEGS -SEGS_HEADER:SEGS_HEADER -SEG_ELT:SEG_ELT
+@ImpactAssembleSEGS +seg_header:SEGS_HEADER +seg_elt:SEG_ELT -SEGS:SEGS
+@ImpactFrom_SEG_ELT +seg_elt:SEG_ELT -seg_elt:SEG_ELT -cropped_image:G -cropped_mask:K -crop_region:SEG_ELT_crop_region -bbox:SEG_ELT_bbox -control_net_wrapper:SEG_ELT_control_net_wrapper -confidence:F -label:S
+@ImpactEdit_SEG_ELT +seg_elt:SEG_ELT ?cropped_image_opt:G ?cropped_mask_opt:K ?crop_region_opt:SEG_ELT_crop_region ?bbox_opt:SEG_ELT_bbox ?control_net_wrapper_opt:SEG_ELT_control_net_wrapper ?confidence_opt:F ?label_opt:S -SEG_ELT:SEG_ELT
+@ImpactDilate_Mask_SEG_ELT +seg_elt:SEG_ELT +dilation:I -SEG_ELT:SEG_ELT
+@ImpactDilateMask +mask:K +dilation:I -MASK:K
+@ImpactGaussianBlurMask +mask:K +kernel_size:I +sigma:F -MASK:K
+@ImpactDilateMaskInSEGS +segs:SEGS +dilation:I -SEGS:SEGS
+@ImpactGaussianBlurMaskInSEGS +segs:SEGS +kernel_size:I +sigma:F -SEGS:SEGS
+@ImpactScaleBy_BBOX_SEG_ELT +seg:SEG_ELT +scale_by:F -SEG_ELT:SEG_ELT
+@ImpactFrom_SEG_ELT_bbox +bbox:SEG_ELT_bbox -left:I -top:I -right:I -bottom:I
+@ImpactFrom_SEG_ELT_crop_region +crop_region:SEG_ELT_crop_region -left:I -top:I -right:I -bottom:I
+@ImpactCount_Elts_in_SEGS +segs:SEGS -INT:I
+@BboxDetectorCombined_v2 +bbox_detector:X +image:G +threshold:F +dilation:I -MASK:K
+@SegmDetectorCombined_v2 +segm_detector:Z +image:G +threshold:F +dilation:I -MASK:K
+@SegsToCombinedMask +segs:SEGS -MASK:K
+@KSamplerProvider +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +basic_pipe:E ?scheduler_func_opt:R -KSAMPLER:KSAMPLER
+@TwoSamplersForMask +latent_image:A +base_sampler:KSAMPLER +mask_sampler:KSAMPLER +mask:K -LATENT:A
+@TiledKSamplerProvider +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +tile_width:I +tile_height:I +tiling_strategy:L +basic_pipe:E -KSAMPLER:KSAMPLER
+@KSamplerAdvancedProvider +cfg:F +sampler_name:L +scheduler:L +sigma_factor:F +basic_pipe:E ?sampler_opt:3 ?scheduler_func_opt:R -KSAMPLER_ADVANCED:KSAMPLER_ADVANCED
+@TwoAdvancedSamplersForMask +seed:I +steps:I +denoise:F +samples:A +base_sampler:KSAMPLER_ADVANCED +mask_sampler:KSAMPLER_ADVANCED +mask:K +overlap_factor:I -LATENT:A
+@ImpactNegativeConditioningPlaceholder -CONDITIONING:C
+@PreviewBridge +images:G +image:S ?block:B ?restore_mask:L -IMAGE:G -MASK:K
+@PreviewBridgeLatent +latent:A +image:S +preview_method:L ?vae_opt:V ?block:B ?restore_mask:L -LATENT:A -MASK:K
+@ImageSender +images:G +filename_prefix:S +link_id:I
+@ImageReceiver +image:L +link_id:I +save_to_workflow:B +image_data:S +trigger_always:B -IMAGE:G -MASK:K
+@LatentSender +samples:A +filename_prefix:S +link_id:I +preview_method:L
+@LatentReceiver +latent:L +link_id:I +trigger_always:B -LATENT:A
+@ImageMaskSwitch +select:I +images1:G ?mask1_opt:K ?images2_opt:G ?mask2_opt:K ?images3_opt:G ?mask3_opt:K ?images4_opt:G ?mask4_opt:K -IMAGE:G -MASK:K
+@LatentSwitch +select:I +sel_mode:B ?input1:* -selected_value:* -selected_label:S -selected_index:I
+@SEGSSwitch +select:I +sel_mode:B ?input1:* -selected_value:* -selected_label:S -selected_index:I
+@ImpactSwitch +select:I +sel_mode:B ?input1:* -selected_value:* -selected_label:S -selected_index:I
+@ImpactInversedSwitch +select:I +input:* ?sel_mode:B -*:*
+@ImpactWildcardProcessor +wildcard_text:S +populated_text:S +mode:L +seed:I +Select to add Wildcard:L -processed text:S
+@ImpactWildcardEncode +model:M +clip:P +wildcard_text:S +populated_text:S +mode:L +Select to add LoRA:L +Select to add Wildcard:L +seed:I -model:M -clip:P -conditioning:C -populated_text:S
+@SEGSUpscaler +image:G +segs:SEGS +model:M +clip:P +vae:V +rescale_factor:F +resampling_method:L +supersample:L +rounding_modulus:I +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +feather:I +inpaint_model:B +noise_mask_feather:I ?upscale_model_opt:U ?upscaler_hook_opt:UPSCALER_HOOK ?scheduler_func_opt:R -IMAGE:G
+@SEGSUpscalerPipe +image:G +segs:SEGS +basic_pipe:E +rescale_factor:F +resampling_method:L +supersample:L +rounding_modulus:I +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +inpaint_model:B +noise_mask_feather:I ?upscale_model_opt:U ?upscaler_hook_opt:UPSCALER_HOOK ?scheduler_func_opt:R -IMAGE:G
+@SEGSDetailer +image:G +segs:SEGS +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +noise_mask:B +force_inpaint:B +basic_pipe:E +refiner_ratio:F +batch_size:I +cycle:I ?refiner_basic_pipe_opt:E ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R -segs:SEGS -cnet_images:G
+@SEGSPaste +image:G +segs:SEGS +feather:I +alpha:I ?ref_image_opt:G -IMAGE:G
+@SEGSPreview +segs:SEGS +alpha_mode:B +min_alpha:F ?fallback_image_opt:G -IMAGE:G
+@SEGSPreviewCNet +segs:SEGS -IMAGE:G
+@SEGSToImageList +segs:SEGS ?fallback_image_opt:G -IMAGE:G
+@ImpactSEGSToMaskList +segs:SEGS -MASK:K
+@ImpactSEGSToMaskBatch +segs:SEGS -MASK:K
+@ImpactSEGSConcat +segs1:SEGS -SEGS:SEGS
+@ImpactSEGSPicker +picks:S +segs:SEGS ?fallback_image_opt:G -SEGS:SEGS
+@ImpactMakeTileSEGS +images:G +bbox_size:I +crop_factor:F +min_overlap:I +filter_segs_dilation:I +mask_irregularity:F +irregular_mask_mode:L ?filter_in_segs_opt:SEGS ?filter_out_segs_opt:SEGS -SEGS:SEGS
+@ImpactSEGSMerge +segs:SEGS -SEGS:SEGS
+@SEGSDetailerForAnimateDiff +image_frames:G +segs:SEGS +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +basic_pipe:E +refiner_ratio:F ?refiner_basic_pipe_opt:E ?noise_mask_feather:I ?scheduler_func_opt:R -segs:SEGS -cnet_images:G
+@ImpactKSamplerBasicPipe +basic_pipe:E +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +latent_image:A +denoise:F ?scheduler_func_opt:R -BASIC_PIPE:E -LATENT:A -VAE:V
+@ImpactKSamplerAdvancedBasicPipe +basic_pipe:E +add_noise:B +noise_seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +latent_image:A +start_at_step:I +end_at_step:I +return_with_leftover_noise:B ?scheduler_func_opt:R -BASIC_PIPE:E -LATENT:A -VAE:V
+@ReencodeLatent +samples:A +tile_mode:L +input_vae:V +output_vae:V +tile_size:I ?overlap:I -LATENT:A
+@ReencodeLatentPipe +samples:A +tile_mode:L +input_basic_pipe:E +output_basic_pipe:E -LATENT:A
+@ImpactImageBatchToImageList +image:G -IMAGE:G
+@ImpactMakeImageList +image1:G -IMAGE:G
+@ImpactMakeImageBatch +image1:G -IMAGE:G
+@ImpactMakeAnyList ?value1:* -*:*
+@ImpactMakeMaskList +mask1:K -MASK:K
+@ImpactMakeMaskBatch +mask1:K -MASK:K
+@RegionalSampler +seed:I +seed_2nd:I +seed_2nd_mode:L +steps:I +base_only_steps:I +denoise:F +samples:A +base_sampler:KSAMPLER_ADVANCED +regional_prompts:REGIONAL_PROMPTS +overlap_factor:I +restore_latent:B +additional_mode:L +additional_sampler:L +additional_sigma_ratio:F -LATENT:A
+@RegionalSamplerAdvanced +add_noise:B +noise_seed:I +steps:I +start_at_step:I +end_at_step:I +overlap_factor:I +restore_latent:B +return_with_leftover_noise:B +latent_image:A +base_sampler:KSAMPLER_ADVANCED +regional_prompts:REGIONAL_PROMPTS +additional_mode:L +additional_sampler:L +additional_sigma_ratio:F -LATENT:A
+@CombineRegionalPrompts +regional_prompts1:REGIONAL_PROMPTS -REGIONAL_PROMPTS:REGIONAL_PROMPTS
+@RegionalPrompt +mask:K +advanced_sampler:KSAMPLER_ADVANCED ?variation_seed:I ?variation_strength:F ?variation_method:L -REGIONAL_PROMPTS:REGIONAL_PROMPTS
+@ImpactCombineConditionings +conditioning1:C -CONDITIONING:C
+@ImpactConcatConditionings +conditioning1:C -CONDITIONING:C
+@ImpactSEGSLabelAssign +segs:SEGS +labels:S -SEGS:SEGS
+@ImpactSEGSLabelFilter +segs:SEGS +preset:L +labels:S -filtered_SEGS:SEGS -remained_SEGS:SEGS
+@ImpactSEGSRangeFilter +segs:SEGS +target:L +mode:B +min_value:I +max_value:I -filtered_SEGS:SEGS -remained_SEGS:SEGS
+@ImpactSEGSOrderedFilter +segs:SEGS +target:L +order:B +take_start:I +take_count:I -filtered_SEGS:SEGS -remained_SEGS:SEGS
+@ImpactCompare +cmp:L +a:* +b:* -BOOLEAN:B
+@ImpactConditionalBranch +cond:B +tt_value:* +ff_value:* -*:*
+@ImpactConditionalBranchSelMode +cond:B ?tt_value:* ?ff_value:* -*:*
+@ImpactIfNone ?signal:* ?any_input:* -signal_opt:* -bool:B
+@ImpactConvertDataType +value:* -STRING:S -FLOAT:F -INT:I -BOOLEAN:B
+@ImpactLogicalOperators +operator:L +bool_a:B +bool_b:B -BOOLEAN:B
+@ImpactInt +value:I -INT:I
+@ImpactFloat +value:F -FLOAT:F
+@ImpactBoolean +value:B -BOOLEAN:B
+@ImpactValueSender +value:* +link_id:I ?signal_opt:* -signal:*
+@ImpactValueReceiver +typ:L +value:S +link_id:I -*:*
+@ImpactImageInfo +value:G -batch:I -height:I -width:I -channel:I
+@ImpactLatentInfo +value:A -batch:I -height:I -width:I -channel:I
+@ImpactMinMax +mode:B +a:* +b:* -INT:I
+@ImpactNeg +value:B -BOOLEAN:B
+@ImpactConditionalStopIteration +cond:B
+@ImpactStringSelector +strings:S +multiline:B +select:I -STRING:S
+@StringListToString +join_with:S +string_list:S -STRING:S
+@WildcardPromptFromString +string:S +delimiter:S +prefix_all:S +postfix_all:S +restrict_to_tags:S +exclude_tags:S -wildcard:S -segs_labels:S
+@ImpactExecutionOrderController +signal:* +value:* -signal:* -value:*
+@ImpactListBridge +list_input:* -list_output:*
+@RemoveNoiseMask +samples:A -LATENT:A
+@ImpactLogger +data:* +text:S
+@ImpactDummyInput -*:*
+@ImpactQueueTrigger +signal:* +mode:B -signal_opt:*
+@ImpactQueueTriggerCountdown +count:I +total:I +mode:B ?signal:* -signal_opt:* -count:I -total:I
+@ImpactSetWidgetValue +signal:* +node_id:I +widget_name:S ?boolean_value:B ?int_value:I ?float_value:F ?string_value:S -signal_opt:*
+@ImpactNodeSetMuteState +signal:* +node_id:I +set_state:B -signal_opt:*
+@ImpactControlBridge +value:* +mode:B +behavior:L -value:*
+@ImpactIsNotEmptySEGS +segs:SEGS -BOOLEAN:B
+@ImpactSleep +signal:* +seconds:F -signal_opt:*
+@ImpactRemoteBoolean +node_id:I +widget_name:S +value:B
+@ImpactRemoteInt +node_id:I +widget_name:S +value:I
+@ImpactHFTransformersClassifierProvider +preset_repo_id:L +manual_repo_id:S +device_mode:L -TRANSFORMERS_CLASSIFIER:TRANSFORMERS_CLASSIFIER
+@ImpactSEGSClassify +classifier:TRANSFORMERS_CLASSIFIER +segs:SEGS +preset_expr:L +manual_expr:S ?ref_image_opt:G -filtered_SEGS:SEGS -remained_SEGS:SEGS -detected_labels:S
+@ImpactSchedulerAdapter +scheduler:L +extra_scheduler:L -scheduler:*
+@GITSSchedulerFuncProvider +coeff:F +denoise:F -SCHEDULER_FUNC:R
+@UltralyticsDetectorProvider +model_name:L -BBOX_DETECTOR:X -SEGM_DETECTOR:Z
+
+# StableXWrapper
+@DownloadAndLoadStableXModel +model:L -pipeline:YOSOPIPE
+@StableXProcessImage +pipeline:YOSOPIPE +image:G +processing_resolution:I +controlnet_strength:F +seed:I -image:G
+
+# TripoAPI
+@TripoAPIDraft +mode:L +apikey:S ?prompt:S ?image:G ?image_left:G ?image_back:G ?image_right:G ?model_version:L ?style:L ?texture:B ?pbr:B ?image_seed:I ?model_seed:I ?texture_seed:I ?texture_quality:L ?texture_alignment:L ?face_limit:I ?quad:B -model_file:S -model task_id:MODEL_TASK_ID -API KEY:API_KEY
+@TripoTextureModel +model_task_id:MODEL_TASK_ID +apikey:API_KEY ?texture:B ?pbr:B ?texture_seed:I ?texture_quality:L ?texture_alignment:L -model_file:S -model task_id:MODEL_TASK_ID
+@TripoRefineModel +model_task_id:MODEL_TASK_ID +apikey:API_KEY -model_file:S -model task_id:MODEL_TASK_ID
+@TripoAnimateRigNode +original_model_task_id:MODEL_TASK_ID +apikey:API_KEY -model_file:S -rig task_id:RIG_TASK_ID
+@TripoAnimateRetargetNode +original_model_task_id:RIG_TASK_ID +animation:L +apikey:API_KEY -model_file:S -retarget task_id:RETARGET_TASK_ID
+@TripoConvertNode +original_model_task_id:MODEL_TASK_ID,RIG_TASK_ID,RETARGET_TASK_ID +format:L +apikey:API_KEY ?quad:B ?face_limit:I ?texture_size:I ?texture_format:L
+
+# Ultralytics
+@UltralyticsModelLoader ?model_name:L -ULTRALYTICS_MODEL:ULTRALYTICS_MODEL
+@UltralyticsInference +model:ULTRALYTICS_MODEL +image:G ?conf:F ?iou:F ?height:I ?width:I ?device:L ?half:B ?augment:B ?agnostic_nms:B ?classes:S -ULTRALYTICS_RESULTS:ULTRALYTICS_RESULTS -IMAGE:G -BOXES:BOXES -MASKS:MASKS -PROBABILITIES:PROBABILITIES -KEYPOINTS:KEYPOINTS -OBB:OBB -LABELS:LABELS
+@UltralyticsVisualization +results:ULTRALYTICS_RESULTS +image:G +line_width:I +font_size:I +sam:B +kpt_line:B +labels:B +boxes:B +masks:B +probs:B +color_mode:L -IMAGE:G
+@ConvertToDict ?bbox:BOXES ?mask:MASKS -STRING:S
+@BBoxToXYWH +index:I +bbox:BOXES -StrBox:S -BOXES:I -X_coord:I -Y_coord:I -Width:I
+@BBoxToCoco +results:ULTRALYTICS_RESULTS +bbox:BOXES -coco_json:S
+@CustomUltralyticsModelLoader +model_path:L -ULTRALYTICS_MODEL:ULTRALYTICS_MODEL
+@CocoToNumber +coco_label:L -STRING:S
+@GetImageSize +image:G -Height:I -Width:I
+@ImageResizeAdvanced +image:G +width:I +height:I +interpolation:L +method:L +condition:L +multiple_of:I -IMAGE:G -width:I -height:I
+@BBoxVisNode +image:G +bboxes:BOXES +category_ids:LABELS +rect_size:I +text_size:I +font_scale:F +show_label:B -IMAGE:G
+@ViewText +text:S -STRING:S
+
+# _for_testing
+@LatentBlend +samples1:A +samples2:A +blend_factor:F -LATENT:A
+@VAEDecodeTiled +samples:A +vae:V +tile_size:I +overlap:I +temporal_size:I +temporal_overlap:I -IMAGE:G
+@VAEEncodeTiled +pixels:G +vae:V +tile_size:I +overlap:I +temporal_size:I +temporal_overlap:I -LATENT:A
+@LoadLatent +latent:L -LATENT:A
+@SaveLatent +samples:A +filename_prefix:S
+@AddNoise +model:M +noise:1 +sigmas:0 +latent_image:A -LATENT:A
+@SelfAttentionGuidance +model:M +scale:F +blur_sigma:F -MODEL:M
+@PerpNeg +model:M +empty_conditioning:C +neg_scale:F -MODEL:M
+@PerpNegGuider +model:M +positive:C +negative:C +empty_conditioning:C +cfg:F +neg_scale:F -GUIDER:W
+@PhotoMakerLoader +photomaker_model_name:L -PHOTOMAKER:PHOTOMAKER
+@PhotoMakerEncode +photomaker:PHOTOMAKER +image:G +clip:P +text:S -CONDITIONING:C
+@CLIPTextEncodeControlnet +clip:P +conditioning:C +text:S -CONDITIONING:C
+@StableCascade_SuperResolutionControlnet +image:G +vae:V -controlnet_input:G -stage_c:A -stage_b:A
+@DifferentialDiffusion +model:M -MODEL:M
+@UNetSelfAttentionMultiply +model:M +q:F +k:F +v:F +out:F -MODEL:M
+@UNetCrossAttentionMultiply +model:M +q:F +k:F +v:F +out:F -MODEL:M
+@CLIPAttentionMultiply +clip:P +q:F +k:F +v:F +out:F -CLIP:P
+@UNetTemporalAttentionMultiply +model:M +self_structural:F +self_temporal:F +cross_structural:F +cross_temporal:F -MODEL:M
+@SamplerEulerCFGpp +version:L -SAMPLER:3
+@LoraSave +filename_prefix:S +rank:I +lora_type:L +bias_diff:B ?model_diff:M ?text_encoder_diff:P
+@TorchCompileModel +model:M +backend:L -MODEL:M
+@Mahiro +model:M -patched_model:M
+
+# advanced
+@CLIPLoader +clip_name:L +type:L ?device:L -CLIP:P
+@UNETLoader +unet_name:L +weight_dtype:L -MODEL:M
+@DualCLIPLoader +clip_name1:L +clip_name2:L +type:L ?device:L -CLIP:P
+@CheckpointLoader +config_name:L +ckpt_name:L -MODEL:M -CLIP:P -VAE:V
+@DiffusersLoader +model_path:L -MODEL:M -CLIP:P -VAE:V
+@ConditioningZeroOut +conditioning:C -CONDITIONING:C
+@ConditioningSetTimestepRange +conditioning:C +start:F +end:F -CONDITIONING:C
+@ModelMergeSimple +model1:M +model2:M +ratio:F -MODEL:M
+@ModelMergeBlocks +model1:M +model2:M +input:F +middle:F +out:F -MODEL:M
+@ModelMergeSubtract +model1:M +model2:M +multiplier:F -MODEL:M
+@ModelMergeAdd +model1:M +model2:M -MODEL:M
+@CheckpointSave +model:M +clip:P +vae:V +filename_prefix:S
+@CLIPMergeSimple +clip1:P +clip2:P +ratio:F -CLIP:P
+@CLIPMergeSubtract +clip1:P +clip2:P +multiplier:F -CLIP:P
+@CLIPMergeAdd +clip1:P +clip2:P -CLIP:P
+@CLIPSave +clip:P +filename_prefix:S
+@VAESave +vae:V +filename_prefix:S
+@ModelSave +model:M +filename_prefix:S
+@CLIPTextEncodeSDXLRefiner +ascore:F +width:I +height:I +text:S +clip:P -CONDITIONING:C
+@CLIPTextEncodeSDXL +clip:P +width:I +height:I +crop_w:I +crop_h:I +target_width:I +target_height:I +text_g:S +text_l:S -CONDITIONING:C
+@ModelSamplingDiscrete +model:M +sampling:L +zsnr:B -MODEL:M
+@ModelSamplingContinuousEDM +model:M +sampling:L +sigma_max:F +sigma_min:F -MODEL:M
+@ModelSamplingContinuousV +model:M +sampling:L +sigma_max:F +sigma_min:F -MODEL:M
+@ModelSamplingStableCascade +model:M +shift:F -MODEL:M
+@ModelSamplingSD3 +model:M +shift:F -MODEL:M
+@ModelSamplingAuraFlow +model:M +shift:F -MODEL:M
+@ModelSamplingFlux +model:M +max_shift:F +base_shift:F +width:I +height:I -MODEL:M
+@RescaleCFG +model:M +multiplier:F -MODEL:M
+@ModelComputeDtype +model:M +dtype:L -MODEL:M
+@ImageOnlyCheckpointSave +model:M +clip_vision:N +vae:V +filename_prefix:S
+@CLIPTextEncodePixArtAlpha +width:I +height:I +text:S +clip:P -CONDITIONING:C
+@ModelMergeSD1 +model1:M +model2:M +time_embed.:F +label_emb.:F +input_blocks.0.:F +input_blocks.1.:F +input_blocks.2.:F +input_blocks.3.:F +input_blocks.4.:F +input_blocks.5.:F +input_blocks.6.:F +input_blocks.7.:F +input_blocks.8.:F +input_blocks.9.:F +input_blocks.10.:F +input_blocks.11.:F +middle_block.0.:F +middle_block.1.:F +middle_block.2.:F +output_blocks.0.:F +output_blocks.1.:F +output_blocks.2.:F +output_blocks.3.:F +output_blocks.4.:F +output_blocks.5.:F +output_blocks.6.:F +output_blocks.7.:F +output_blocks.8.:F +output_blocks.9.:F +output_blocks.10.:F +output_blocks.11.:F +out.:F -MODEL:M
+@ModelMergeSD2 +model1:M +model2:M +time_embed.:F +label_emb.:F +input_blocks.0.:F +input_blocks.1.:F +input_blocks.2.:F +input_blocks.3.:F +input_blocks.4.:F +input_blocks.5.:F +input_blocks.6.:F +input_blocks.7.:F +input_blocks.8.:F +input_blocks.9.:F +input_blocks.10.:F +input_blocks.11.:F +middle_block.0.:F +middle_block.1.:F +middle_block.2.:F +output_blocks.0.:F +output_blocks.1.:F +output_blocks.2.:F +output_blocks.3.:F +output_blocks.4.:F +output_blocks.5.:F +output_blocks.6.:F +output_blocks.7.:F +output_blocks.8.:F +output_blocks.9.:F +output_blocks.10.:F +output_blocks.11.:F +out.:F -MODEL:M
+@ModelMergeSDXL +model1:M +model2:M +time_embed.:F +label_emb.:F +input_blocks.0:F +input_blocks.1:F +input_blocks.2:F +input_blocks.3:F +input_blocks.4:F +input_blocks.5:F +input_blocks.6:F +input_blocks.7:F +input_blocks.8:F +middle_block.0:F +middle_block.1:F +middle_block.2:F +output_blocks.0:F +output_blocks.1:F +output_blocks.2:F +output_blocks.3:F +output_blocks.4:F +output_blocks.5:F +output_blocks.6:F +output_blocks.7:F +output_blocks.8:F +out.:F -MODEL:M
+@ModelMergeSD3_2B +model1:M +model2:M +pos_embed.:F +x_embedder.:F +context_embedder.:F +y_embedder.:F +t_embedder.:F +joint_blocks.0.:F +joint_blocks.1.:F +joint_blocks.2.:F +joint_blocks.3.:F +joint_blocks.4.:F +joint_blocks.5.:F +joint_blocks.6.:F +joint_blocks.7.:F +joint_blocks.8.:F +joint_blocks.9.:F +joint_blocks.10.:F +joint_blocks.11.:F +joint_blocks.12.:F +joint_blocks.13.:F +joint_blocks.14.:F +joint_blocks.15.:F +joint_blocks.16.:F +joint_blocks.17.:F +joint_blocks.18.:F +joint_blocks.19.:F +joint_blocks.20.:F +joint_blocks.21.:F +joint_blocks.22.:F +joint_blocks.23.:F +final_layer.:F -MODEL:M
+@ModelMergeAuraflow +model1:M +model2:M +init_x_linear.:F +positional_encoding:F +cond_seq_linear.:F +register_tokens:F +t_embedder.:F +double_layers.0.:F +double_layers.1.:F +double_layers.2.:F +double_layers.3.:F +single_layers.0.:F +single_layers.1.:F +single_layers.2.:F +single_layers.3.:F +single_layers.4.:F +single_layers.5.:F +single_layers.6.:F +single_layers.7.:F +single_layers.8.:F +single_layers.9.:F +single_layers.10.:F +single_layers.11.:F +single_layers.12.:F +single_layers.13.:F +single_layers.14.:F +single_layers.15.:F +single_layers.16.:F +single_layers.17.:F +single_layers.18.:F +single_layers.19.:F +single_layers.20.:F +single_layers.21.:F +single_layers.22.:F +single_layers.23.:F +single_layers.24.:F +single_layers.25.:F +single_layers.26.:F +single_layers.27.:F +single_layers.28.:F +single_layers.29.:F +single_layers.30.:F +single_layers.31.:F +modF.:F +final_linear.:F -MODEL:M
+@ModelMergeFlux1 +model1:M +model2:M +img_in.:F +time_in.:F +guidance_in:F +vector_in.:F +txt_in.:F +double_blocks.0.:F +double_blocks.1.:F +double_blocks.2.:F +double_blocks.3.:F +double_blocks.4.:F +double_blocks.5.:F +double_blocks.6.:F +double_blocks.7.:F +double_blocks.8.:F +double_blocks.9.:F +double_blocks.10.:F +double_blocks.11.:F +double_blocks.12.:F +double_blocks.13.:F +double_blocks.14.:F +double_blocks.15.:F +double_blocks.16.:F +double_blocks.17.:F +double_blocks.18.:F +single_blocks.0.:F +single_blocks.1.:F +single_blocks.2.:F +single_blocks.3.:F +single_blocks.4.:F +single_blocks.5.:F +single_blocks.6.:F +single_blocks.7.:F +single_blocks.8.:F +single_blocks.9.:F +single_blocks.10.:F +single_blocks.11.:F +single_blocks.12.:F +single_blocks.13.:F +single_blocks.14.:F +single_blocks.15.:F +single_blocks.16.:F +single_blocks.17.:F +single_blocks.18.:F +single_blocks.19.:F +single_blocks.20.:F +single_blocks.21.:F +single_blocks.22.:F +single_blocks.23.:F +single_blocks.24.:F +single_blocks.25.:F +single_blocks.26.:F +single_blocks.27.:F +single_blocks.28.:F +single_blocks.29.:F +single_blocks.30.:F +single_blocks.31.:F +single_blocks.32.:F +single_blocks.33.:F +single_blocks.34.:F +single_blocks.35.:F +single_blocks.36.:F +single_blocks.37.:F +final_layer.:F -MODEL:M
+@ModelMergeSD35_Large +model1:M +model2:M +pos_embed.:F +x_embedder.:F +context_embedder.:F +y_embedder.:F +t_embedder.:F +joint_blocks.0.:F +joint_blocks.1.:F +joint_blocks.2.:F +joint_blocks.3.:F +joint_blocks.4.:F +joint_blocks.5.:F +joint_blocks.6.:F +joint_blocks.7.:F +joint_blocks.8.:F +joint_blocks.9.:F +joint_blocks.10.:F +joint_blocks.11.:F +joint_blocks.12.:F +joint_blocks.13.:F +joint_blocks.14.:F +joint_blocks.15.:F +joint_blocks.16.:F +joint_blocks.17.:F +joint_blocks.18.:F +joint_blocks.19.:F +joint_blocks.20.:F +joint_blocks.21.:F +joint_blocks.22.:F +joint_blocks.23.:F +joint_blocks.24.:F +joint_blocks.25.:F +joint_blocks.26.:F +joint_blocks.27.:F +joint_blocks.28.:F +joint_blocks.29.:F +joint_blocks.30.:F +joint_blocks.31.:F +joint_blocks.32.:F +joint_blocks.33.:F +joint_blocks.34.:F +joint_blocks.35.:F +joint_blocks.36.:F +joint_blocks.37.:F +final_layer.:F -MODEL:M
+@ModelMergeMochiPreview +model1:M +model2:M +pos_frequencies.:F +t_embedder.:F +t5_y_embedder.:F +t5_yproj.:F +blocks.0.:F +blocks.1.:F +blocks.2.:F +blocks.3.:F +blocks.4.:F +blocks.5.:F +blocks.6.:F +blocks.7.:F +blocks.8.:F +blocks.9.:F +blocks.10.:F +blocks.11.:F +blocks.12.:F +blocks.13.:F +blocks.14.:F +blocks.15.:F +blocks.16.:F +blocks.17.:F +blocks.18.:F +blocks.19.:F +blocks.20.:F +blocks.21.:F +blocks.22.:F +blocks.23.:F +blocks.24.:F +blocks.25.:F +blocks.26.:F +blocks.27.:F +blocks.28.:F +blocks.29.:F +blocks.30.:F +blocks.31.:F +blocks.32.:F +blocks.33.:F +blocks.34.:F +blocks.35.:F +blocks.36.:F +blocks.37.:F +blocks.38.:F +blocks.39.:F +blocks.40.:F +blocks.41.:F +blocks.42.:F +blocks.43.:F +blocks.44.:F +blocks.45.:F +blocks.46.:F +blocks.47.:F +final_layer.:F -MODEL:M
+@ModelMergeLTXV +model1:M +model2:M +patchify_proj.:F +adaln_single.:F +caption_projection.:F +transformer_blocks.0.:F +transformer_blocks.1.:F +transformer_blocks.2.:F +transformer_blocks.3.:F +transformer_blocks.4.:F +transformer_blocks.5.:F +transformer_blocks.6.:F +transformer_blocks.7.:F +transformer_blocks.8.:F +transformer_blocks.9.:F +transformer_blocks.10.:F +transformer_blocks.11.:F +transformer_blocks.12.:F +transformer_blocks.13.:F +transformer_blocks.14.:F +transformer_blocks.15.:F +transformer_blocks.16.:F +transformer_blocks.17.:F +transformer_blocks.18.:F +transformer_blocks.19.:F +transformer_blocks.20.:F +transformer_blocks.21.:F +transformer_blocks.22.:F +transformer_blocks.23.:F +transformer_blocks.24.:F +transformer_blocks.25.:F +transformer_blocks.26.:F +transformer_blocks.27.:F +scale_shift_table:F +proj_out.:F -MODEL:M
+@ModelMergeCosmos7B +model1:M +model2:M +pos_embedder.:F +extra_pos_embedder.:F +x_embedder.:F +t_embedder.:F +affline_norm.:F +blocks.block0.:F +blocks.block1.:F +blocks.block2.:F +blocks.block3.:F +blocks.block4.:F +blocks.block5.:F +blocks.block6.:F +blocks.block7.:F +blocks.block8.:F +blocks.block9.:F +blocks.block10.:F +blocks.block11.:F +blocks.block12.:F +blocks.block13.:F +blocks.block14.:F +blocks.block15.:F +blocks.block16.:F +blocks.block17.:F +blocks.block18.:F +blocks.block19.:F +blocks.block20.:F +blocks.block21.:F +blocks.block22.:F +blocks.block23.:F +blocks.block24.:F +blocks.block25.:F +blocks.block26.:F +blocks.block27.:F +final_layer.:F -MODEL:M
+@ModelMergeCosmos14B +model1:M +model2:M +pos_embedder.:F +extra_pos_embedder.:F +x_embedder.:F +t_embedder.:F +affline_norm.:F +blocks.block0.:F +blocks.block1.:F +blocks.block2.:F +blocks.block3.:F +blocks.block4.:F +blocks.block5.:F +blocks.block6.:F +blocks.block7.:F +blocks.block8.:F +blocks.block9.:F +blocks.block10.:F +blocks.block11.:F +blocks.block12.:F +blocks.block13.:F +blocks.block14.:F +blocks.block15.:F +blocks.block16.:F +blocks.block17.:F +blocks.block18.:F +blocks.block19.:F +blocks.block20.:F +blocks.block21.:F +blocks.block22.:F +blocks.block23.:F +blocks.block24.:F +blocks.block25.:F +blocks.block26.:F +blocks.block27.:F +blocks.block28.:F +blocks.block29.:F +blocks.block30.:F +blocks.block31.:F +blocks.block32.:F +blocks.block33.:F +blocks.block34.:F +blocks.block35.:F +final_layer.:F -MODEL:M
+@TripleCLIPLoader +clip_name1:L +clip_name2:L +clip_name3:L -CLIP:P
+@CLIPTextEncodeSD3 +clip:P +clip_l:S +clip_g:S +t5xxl:S +empty_padding:L -CONDITIONING:C
+@SkipLayerGuidanceSD3 +model:M +layers:S +scale:F +start_percent:F +end_percent:F -MODEL:M
+@CLIPTextEncodeHunyuanDiT +clip:P +bert:S +mt5xl:S -CONDITIONING:C
+@TextEncodeHunyuanVideo_ImageToVideo +clip:P +clip_vision_output:O +prompt:S +image_interleave:I -CONDITIONING:C
+@CLIPTextEncodeFlux +clip:P +clip_l:S +t5xxl:S +guidance:F -CONDITIONING:C
+@FluxGuidance +conditioning:C +guidance:F -CONDITIONING:C
+@FluxDisableGuidance +conditioning:C -CONDITIONING:C
+@SkipLayerGuidanceDiT +model:M +double_layers:S +single_layers:S +scale:F +start_percent:F +end_percent:F +rescaling_scale:F -MODEL:M
+@ModelSamplingLTXV +model:M +max_shift:F +base_shift:F ?latent:A -MODEL:M
+@CreateHookLora +lora_name:L +strength_model:F +strength_clip:F ?prev_hooks:4 -HOOKS:4
+@CreateHookLoraModelOnly +lora_name:L +strength_model:F ?prev_hooks:4 -HOOKS:4
+@CreateHookModelAsLora +ckpt_name:L +strength_model:F +strength_clip:F ?prev_hooks:4 -HOOKS:4
+@CreateHookModelAsLoraModelOnly +ckpt_name:L +strength_model:F ?prev_hooks:4 -HOOKS:4
+@SetHookKeyframes +hooks:4 ?hook_kf:HOOK_KEYFRAMES -HOOKS:4
+@CreateHookKeyframe +strength_mult:F +start_percent:F ?prev_hook_kf:HOOK_KEYFRAMES -HOOK_KF:HOOK_KEYFRAMES
+@CreateHookKeyframesInterpolated +strength_start:F +strength_end:F +interpolation:L +start_percent:F +end_percent:F +keyframes_count:I +print_keyframes:B ?prev_hook_kf:HOOK_KEYFRAMES -HOOK_KF:HOOK_KEYFRAMES
+@CreateHookKeyframesFromFloats +floats_strength:FLOATS +start_percent:F +end_percent:F +print_keyframes:B ?prev_hook_kf:HOOK_KEYFRAMES -HOOK_KF:HOOK_KEYFRAMES
+@CombineHooks2 ?hooks_A:4 ?hooks_B:4 -HOOKS:4
+@CombineHooks4 ?hooks_A:4 ?hooks_B:4 ?hooks_C:4 ?hooks_D:4 -HOOKS:4
+@CombineHooks8 ?hooks_A:4 ?hooks_B:4 ?hooks_C:4 ?hooks_D:4 ?hooks_E:4 ?hooks_F:4 ?hooks_G:4 ?hooks_H:4 -HOOKS:4
+@ConditioningSetProperties +cond_NEW:C +strength:F +set_cond_area:L ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -CONDITIONING:C
+@ConditioningSetPropertiesAndCombine +cond:C +cond_NEW:C +strength:F +set_cond_area:L ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -CONDITIONING:C
+@PairConditioningSetProperties +positive_NEW:C +negative_NEW:C +strength:F +set_cond_area:L ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -positive:C -negative:C
+@PairConditioningSetPropertiesAndCombine +positive:C +negative:C +positive_NEW:C +negative_NEW:C +strength:F +set_cond_area:L ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -positive:C -negative:C
+@ConditioningSetDefaultCombine +cond:C +cond_DEFAULT:C ?hooks:4 -CONDITIONING:C
+@PairConditioningSetDefaultCombine +positive:C +negative:C +positive_DEFAULT:C +negative_DEFAULT:C ?hooks:4 -positive:C -negative:C
+@PairConditioningCombine +positive_A:C +negative_A:C +positive_B:C +negative_B:C -positive:C -negative:C
+@SetClipHooks +clip:P +apply_to_conds:B +schedule_clip:B ?hooks:4 -CLIP:P
+@ConditioningTimestepsRange +start_percent:F +end_percent:F -TIMESTEPS_RANGE:TIMESTEPS_RANGE -BEFORE_RANGE:TIMESTEPS_RANGE -AFTER_RANGE:TIMESTEPS_RANGE
+@RenormCFG +model:M +cfg_trunc:F +renorm_cfg:F -MODEL:M
+
+# api
+@SaveImageWebsocket +images:G
+
+# audio
+@SaveAudio +audio:2 +filename_prefix:S
+@LoadAudio +audio:L -AUDIO:2
+@PreviewAudio +audio:2
+
+# conditioning
+@CLIPTextEncode +text:S +clip:P -CONDITIONING:C
+@CLIPSetLastLayer +clip:P +stop_at_clip_layer:I -CLIP:P
+@ConditioningAverage +conditioning_to:C +conditioning_from:C +conditioning_to_strength:F -CONDITIONING:C
+@ConditioningCombine +conditioning_1:C +conditioning_2:C -CONDITIONING:C
+@ConditioningConcat +conditioning_to:C +conditioning_from:C -CONDITIONING:C
+@ConditioningSetArea +conditioning:C +width:I +height:I +x:I +y:I +strength:F -CONDITIONING:C
+@ConditioningSetAreaPercentage +conditioning:C +width:F +height:F +x:F +y:F +strength:F -CONDITIONING:C
+@ConditioningSetAreaStrength +conditioning:C +strength:F -CONDITIONING:C
+@ConditioningSetMask +conditioning:C +mask:K +strength:F +set_cond_area:L -CONDITIONING:C
+@CLIPVisionEncode +clip_vision:N +image:G +crop:L -CLIP_VISION_OUTPUT:O
+@StyleModelApply +conditioning:C +style_model:Y +clip_vision_output:O +strength:F +strength_type:L -CONDITIONING:C
+@unCLIPConditioning +conditioning:C +clip_vision_output:O +strength:F +noise_augmentation:F -CONDITIONING:C
+@ControlNetApply +conditioning:C +control_net:T +image:G +strength:F -CONDITIONING:C
+@ControlNetApplyAdvanced +positive:C +negative:C +control_net:T +image:G +strength:F +start_percent:F +end_percent:F ?vae:V -positive:C -negative:C
+@GLIGENTextBoxApply +conditioning_to:C +clip:P +gligen_textbox_model:H +text:S +width:I +height:I +x:I +y:I -CONDITIONING:C
+@InpaintModelConditioning +positive:C +negative:C +vae:V +pixels:G +mask:K +noise_mask:B -positive:C -negative:C -latent:A
+@SVD_img2vid_Conditioning +clip_vision:N +init_image:G +vae:V +width:I +height:I +video_frames:I +motion_bucket_id:I +fps:I +augmentation_level:F -positive:C -negative:C -latent:A
+@ConditioningSetAreaPercentageVideo +conditioning:C +width:F +height:F +temporal:F +x:F +y:F +z:F +strength:F -CONDITIONING:C
+@StableZero123_Conditioning +clip_vision:N +init_image:G +vae:V +width:I +height:I +batch_size:I +elevation:F +azimuth:F -positive:C -negative:C -latent:A
+@StableZero123_Conditioning_Batched +clip_vision:N +init_image:G +vae:V +width:I +height:I +batch_size:I +elevation:F +azimuth:F +elevation_batch_increment:F +azimuth_batch_increment:F -positive:C -negative:C -latent:A
+@SV3D_Conditioning +clip_vision:N +init_image:G +vae:V +width:I +height:I +video_frames:I +elevation:F -positive:C -negative:C -latent:A
+@SD_4XUpscale_Conditioning +images:G +positive:C +negative:C +scale_ratio:F +noise_augmentation:F -positive:C -negative:C -latent:A
+@StableCascade_StageB_Conditioning +conditioning:C +stage_c:A -CONDITIONING:C
+@InstructPixToPixConditioning +positive:C +negative:C +vae:V +pixels:G -positive:C -negative:C -latent:A
+@ConditioningStableAudio +positive:C +negative:C +seconds_start:F +seconds_total:F -positive:C -negative:C
+@ControlNetApplySD3 +positive:C +negative:C +control_net:T +vae:V +image:G +strength:F +start_percent:F +end_percent:F -positive:C -negative:C
+@SetUnionControlNetType +control_net:T +type:L -CONTROL_NET:T
+@ControlNetInpaintingAliMamaApply +positive:C +negative:C +control_net:T +vae:V +image:G +mask:K +strength:F +start_percent:F +end_percent:F -positive:C -negative:C
+@HunyuanImageToVideo +positive:C +vae:V +width:I +height:I +length:I +batch_size:I +guidance_type:L ?start_image:G -positive:C -latent:A
+@LTXVImgToVideo +positive:C +negative:C +vae:V +image:G +width:I +height:I +length:I +batch_size:I -positive:C -negative:C -latent:A
+@LTXVConditioning +positive:C +negative:C +frame_rate:F -positive:C -negative:C
+@LTXVAddGuide +positive:C +negative:C +vae:V +latent:A +image:G +frame_idx:I +strength:F -positive:C -negative:C -latent:A
+@LTXVCropGuides +positive:C +negative:C +latent:A -positive:C -negative:C -latent:A
+@CosmosImageToVideoLatent +vae:V +width:I +height:I +length:I +batch_size:I ?start_image:G ?end_image:G -LATENT:A
+@CLIPTextEncodeLumina2 +system_prompt:L +user_prompt:S +clip:P -CONDITIONING:C
+@WanImageToVideo +positive:C +negative:C +vae:V +width:I +height:I +length:I +batch_size:I ?clip_vision_output:O ?start_image:G -positive:C -negative:C -latent:A
+@LotusConditioning -conditioning:C
+@Hunyuan3Dv2Conditioning +clip_vision_output:O -positive:C -negative:C
+@Hunyuan3Dv2ConditioningMultiView ?front:O ?left:O ?back:O ?right:O -positive:C -negative:C
+
+# essentials
+@CLIPTextEncodeSDXL+ +width:I +height:I +size_cond_factor:I +text:S +clip:P -CONDITIONING:C
+@ConditioningCombineMultiple+ +conditioning_1:C +conditioning_2:C ?conditioning_3:C ?conditioning_4:C ?conditioning_5:C -CONDITIONING:C
+@SD3NegativeConditioning+ +conditioning:C +end:F -CONDITIONING:C
+@ImageEnhanceDifference+ +image1:G +image2:G +exponent:F -IMAGE:G
+@ImageBatchMultiple+ +image_1:G +method:L ?image_2:G ?image_3:G ?image_4:G ?image_5:G -IMAGE:G
+@ImageExpandBatch+ +image:G +size:I +method:L -IMAGE:G
+@ImageFromBatch+ +image:G +start:I +length:I -IMAGE:G
+@ImageListToBatch+ +image:G -IMAGE:G
+@ImageCompositeFromMaskBatch+ +image_from:G +image_to:G +mask:K -IMAGE:G
+@ImageComposite+ +destination:G +source:G +x:I +y:I +offset_x:I +offset_y:I ?mask:K -IMAGE:G
+@ImageCrop+ +image:G +width:I +height:I +position:L +x_offset:I +y_offset:I -IMAGE:G -x:I -y:I
+@ImageFlip+ +image:G +axis:L -IMAGE:G
+@ImageRandomTransform+ +image:G +seed:I +repeat:I +variation:F -IMAGE:G
+@ImageRemoveAlpha+ +image:G -IMAGE:G
+@ImageRemoveBackground+ +rembg_session:REMBG_SESSION +image:G -IMAGE:G -MASK:K
+@ImageResize+ +image:G +width:I +height:I +interpolation:L +method:L +condition:L +multiple_of:I -IMAGE:G -width:I -height:I
+@ImageSeamCarving+ +image:G +width:I +height:I +energy:L +order:L ?keep_mask:K ?drop_mask:K -IMAGE:G
+@ImageTile+ +image:G +rows:I +cols:I +overlap:F +overlap_x:I +overlap_y:I -IMAGE:G -tile_width:I -tile_height:I -overlap_x:I -overlap_y:I
+@ImageUntile+ +tiles:G +overlap_x:I +overlap_y:I +rows:I +cols:I -IMAGE:G
+@RemBGSession+ +model:L +providers:L -REMBG_SESSION:REMBG_SESSION
+@TransparentBGSession+ +mode:L +use_jit:B -REMBG_SESSION:REMBG_SESSION
+@ImageApplyLUT+ +image:G +lut_file:L +gamma_correction:B +clip_values:B +strength:F -IMAGE:G
+@ImageCASharpening+ +image:G +amount:F -IMAGE:G
+@ImageDesaturate+ +image:G +factor:F +method:L -IMAGE:G
+@PixelOEPixelize+ +image:G +downscale_mode:L +target_size:I +patch_size:I +thickness:I +color_matching:B +upscale:B -IMAGE:G
+@ImagePosterize+ +image:G +threshold:F -IMAGE:G
+@ImageColorMatch+ +image:G +reference:G +color_space:L +factor:F +device:L +batch_size:I ?reference_mask:K -IMAGE:G
+@ImageColorMatchAdobe+ +image:G +reference:G +color_space:L +luminance_factor:F +color_intensity_factor:F +fade_factor:F +neutralization_factor:F +device:L ?reference_mask:K -IMAGE:G
+@ImageHistogramMatch+ +image:G +reference:G +method:L +factor:F +device:L -IMAGE:G
+@GetImageSize+ +image:G -width:I -height:I -count:I
+@ImageToDevice+ +image:G +device:L -IMAGE:G
+@ImagePreviewFromLatent+ +latent:A +vae:V +tile_size:I ?image:L -IMAGE:G -MASK:K -width:I -height:I
+@NoiseFromImage+ +image:G +noise_strenght:F +noise_size:F +color_noise:F +mask_strength:F +mask_scale_diff:F +mask_contrast:F +saturation:F +contrast:F +blur:F ?noise_mask:G -IMAGE:G
+@MaskBlur+ +mask:K +amount:I +device:L -MASK:K
+@MaskBoundingBox+ +mask:K +padding:I +blur:I ?image_optional:G -MASK:K -IMAGE:G -x:I -y:I -width:I -height:I
+@MaskFix+ +mask:K +erode_dilate:I +fill_holes:I +remove_isolated_pixels:I +smooth:I +blur:I -MASK:K
+@MaskFlip+ +mask:K +axis:L -MASK:K
+@MaskFromColor+ +image:G +red:I +green:I +blue:I +threshold:I -MASK:K
+@MaskFromList+ +width:I +height:I ?values:INT,FLOAT ?str_values:S -MASK:K
+@MaskFromRGBCMYBW+ +image:G +threshold_r:F +threshold_g:F +threshold_b:F -red:K -green:K -blue:K -cyan:K -magenta:K -yellow:K -black:K -white:K
+@MaskFromSegmentation+ +image:G +segments:I +remove_isolated_pixels:I +remove_small_masks:F +fill_holes:B -MASK:K
+@MaskPreview+ +mask:K
+@MaskSmooth+ +mask:K +amount:I -MASK:K
+@TransitionMask+ +width:I +height:I +frames:I +start_frame:I +end_frame:I +transition_type:L +timing_function:L -MASK:K
+@MaskBatch+ +mask1:K +mask2:K -MASK:K
+@MaskExpandBatch+ +mask:K +size:I +method:L -MASK:K
+@MaskFromBatch+ +mask:K +start:I +length:I -MASK:K
+@KSamplerVariationsStochastic+ +model:M +latent_image:A +noise_seed:I +steps:I +cfg:F +sampler:L +scheduler:L +positive:C +negative:C +variation_seed:INT:seed +variation_strength:F +cfg_scale:F -LATENT:A
+@KSamplerVariationsWithNoise+ +model:M +latent_image:A +main_seed:INT:seed +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +variation_strength:F +variation_seed:INT:seed +denoise:F -LATENT:A
+@InjectLatentNoise+ +latent:A +noise_seed:I +noise_strength:F -LATENT:A
+@FluxSamplerParams+ +model:M +conditioning:C +latent_image:A +noise:S +sampler:S +scheduler:S +steps:S +guidance:S +max_shift:S +base_shift:S +split_sigmas:S +denoise:S -latent:A -params:SAMPLER_PARAMS
+@PlotParameters+ +images:G +params:SAMPLER_PARAMS +order_by:L +cols_value:L +cols_num:I -IMAGE:G
+@ApplyCLIPSeg+ +clip_seg:CLIP_SEG +image:G +prompt:S +threshold:F +smooth:I +dilate:I +blur:I -MASK:K
+@LoadCLIPSegModels+ -CLIP_SEG:CLIP_SEG
+@DrawText+ +text:S +font:L +size:I +color:S +background_color:S +shadow_distance:I +shadow_blur:I +shadow_color:S +horizontal_align:L +vertical_align:L +offset_x:I +offset_y:I ?img_composite:G -IMAGE:G -MASK:K
+@BatchCount+ +batch:* -INT:I
+@ConsoleDebug+ +value:* ?prefix:S
+@DebugTensorShape+ +tensor:*
+@ModelCompile+ +model:M +fullgraph:B +dynamic:B +mode:L -MODEL:M
+@RemoveLatentMask+ +samples:A -LATENT:A
+@SDXLEmptyLatentSizePicker+ +resolution:L +batch_size:I +width_override:I +height_override:I -LATENT:A -width:I -height:I
+@SimpleMath+ +value:S ?a:INT,FLOAT ?b:INT,FLOAT -INT:I -FLOAT:F
+
+# iStableXWrapper
+@DifferenceExtractorNode +original_image:G +processed_image:G +amplification:F -IMAGE:G
+
+# image
+@SaveImage +images:G +filename_prefix:S
+@PreviewImage +images:G
+@LoadImage +image:L -IMAGE:G -MASK:K
+@LoadImageOutput +image:L -IMAGE:G -MASK:K
+@ImageScale +image:G +upscale_method:L +width:I +height:I +crop:L -IMAGE:G
+@ImageScaleBy +image:G +upscale_method:L +scale_by:F -IMAGE:G
+@ImageInvert +image:G -IMAGE:G
+@ImageBatch +image1:G +image2:G -IMAGE:G
+@ImagePadForOutpaint +image:G +left:I +top:I +right:I +bottom:I +feathering:I -IMAGE:G -MASK:K
+@EmptyImage +width:I +height:I +batch_size:I +color:I -IMAGE:G
+@ImageUpscaleWithModel +upscale_model:U +image:G -IMAGE:G
+@ImageBlend +image1:G +image2:G +blend_factor:F +blend_mode:L -IMAGE:G
+@ImageBlur +image:G +blur_radius:I +sigma:F -IMAGE:G
+@ImageQuantize +image:G +colors:I +dither:L -IMAGE:G
+@ImageSharpen +image:G +sharpen_radius:I +sigma:F +alpha:F -IMAGE:G
+@ImageScaleToTotalPixels +image:G +upscale_method:L +megapixels:F -IMAGE:G
+@ImageCompositeMasked +destination:G +source:G +x:I +y:I +resize_source:B ?mask:K -IMAGE:G
+@RebatchImages +images:G +batch_size:I -IMAGE:G
+@Canny +image:G +low_threshold:F +high_threshold:F -IMAGE:G
+@ImageCrop +image:G +width:I +height:I +x:I +y:I -IMAGE:G
+@RepeatImageBatch +image:G +amount:I -IMAGE:G
+@ImageFromBatch +image:G +batch_index:I +length:I -IMAGE:G
+@SaveAnimatedWEBP +images:G +filename_prefix:S +fps:F +lossless:B +quality:I +method:L
+@SaveAnimatedPNG +images:G +filename_prefix:S +fps:F +compress_level:I
+@Morphology +image:G +operation:L +kernel_size:I -IMAGE:G
+@ImageRGBToYUV +image:G -Y:G -U:G -V:G
+@ImageYUVToRGB +Y:G +U:G +V:G -IMAGE:G
+@WebcamCapture +image:WEBCAM +width:I +height:I +capture_on_queue:B -IMAGE:G
+@LTXVPreprocess +image:G +img_compression:I -output_image:G
+@SaveWEBM +images:G +filename_prefix:S +codec:L +fps:F +crf:F
+@ImageCompositeTile +top_left:G +top_right:G +bottom_left:G +bottom_right:G -IMAGE:G
+@InspyrenetRembg +image:G +torchscript_jit:L -IMAGE:G -MASK:K
+@InspyrenetRembgAdvanced +image:G +threshold:F +torchscript_jit:L -IMAGE:G -MASK:K
+@CharacterViewProcessor +image:G +detection_confidence:F +crop_padding:I +output_size:I +remove_background:L +pad_color:L +model_type:L +custom_model_path:S -view1:G -view2:G -view3:G -view4:G
+
+# latent
+@VAEDecode +samples:A +vae:V -IMAGE:G
+@VAEEncode +pixels:G +vae:V -LATENT:A
+@VAEEncodeForInpaint +pixels:G +vae:V +mask:K +grow_mask_by:I -LATENT:A
+@EmptyLatentImage +width:I +height:I +batch_size:I -LATENT:A
+@LatentUpscale +samples:A +upscale_method:L +width:I +height:I +crop:L -LATENT:A
+@LatentUpscaleBy +samples:A +upscale_method:L +scale_by:F -LATENT:A
+@LatentFromBatch +samples:A +batch_index:I +length:I -LATENT:A
+@RepeatLatentBatch +samples:A +amount:I -LATENT:A
+@SetLatentNoiseMask +samples:A +mask:K -LATENT:A
+@LatentComposite +samples_to:A +samples_from:A +x:I +y:I +feather:I -LATENT:A
+@LatentRotate +samples:A +rotation:L -LATENT:A
+@LatentFlip +samples:A +flip_method:L -LATENT:A
+@LatentCrop +samples:A +width:I +height:I +x:I +y:I -LATENT:A
+@LatentAdd +samples1:A +samples2:A -LATENT:A
+@LatentSubtract +samples1:A +samples2:A -LATENT:A
+@LatentMultiply +samples:A +multiplier:F -LATENT:A
+@LatentInterpolate +samples1:A +samples2:A +ratio:F -LATENT:A
+@LatentBatch +samples1:A +samples2:A -LATENT:A
+@LatentBatchSeedBehavior +samples:A +seed_behavior:L -LATENT:A
+@LatentApplyOperation +samples:A +operation:LATENT_OPERATION -LATENT:A
+@LatentApplyOperationCFG +model:M +operation:LATENT_OPERATION -MODEL:M
+@LatentOperationTonemapReinhard +multiplier:F -LATENT_OPERATION:LATENT_OPERATION
+@LatentOperationSharpen +sharpen_radius:I +sigma:F +alpha:F -LATENT_OPERATION:LATENT_OPERATION
+@LatentCompositeMasked +destination:A +source:A +x:I +y:I +resize_source:B ?mask:K -LATENT:A
+@RebatchLatents +latents:A +batch_size:I -LATENT:A
+@StableCascade_EmptyLatentImage +width:I +height:I +compression:I +batch_size:I -stage_c:A -stage_b:A
+@StableCascade_StageC_VAEEncode +image:G +vae:V +compression:I -stage_c:A -stage_b:A
+@EmptyLatentAudio +seconds:F +batch_size:I -LATENT:A
+@VAEEncodeAudio +audio:2 +vae:V -LATENT:A
+@VAEDecodeAudio +samples:A +vae:V -AUDIO:2
+@EmptySD3LatentImage +width:I +height:I +batch_size:I -LATENT:A
+@EmptyHunyuanLatentVideo +width:I +height:I +length:I +batch_size:I -LATENT:A
+@EmptyMochiLatentVideo +width:I +height:I +length:I +batch_size:I -LATENT:A
+@EmptyLTXVLatentVideo +width:I +height:I +length:I +batch_size:I -LATENT:A
+@EmptyCosmosLatentVideo +width:I +height:I +length:I +batch_size:I -LATENT:A
+@EmptyLatentHunyuan3Dv2 +resolution:I +batch_size:I -LATENT:A
+@VAEDecodeHunyuan3D +samples:A +vae:V +num_chunks:I +octree_resolution:I -VOXEL:VOXEL
+
+# loaders
+@CheckpointLoaderSimple +ckpt_name:L -MODEL:M -CLIP:P -VAE:V
+@VAELoader +vae_name:L -VAE:V
+@LoraLoader +model:M +clip:P +lora_name:L +strength_model:F +strength_clip:F -MODEL:M -CLIP:P
+@ControlNetLoader +control_net_name:L -CONTROL_NET:T
+@DiffControlNetLoader +model:M +control_net_name:L -CONTROL_NET:T
+@StyleModelLoader +style_model_name:L -STYLE_MODEL:Y
+@CLIPVisionLoader +clip_name:L -CLIP_VISION:N
+@unCLIPCheckpointLoader +ckpt_name:L -MODEL:M -CLIP:P -VAE:V -CLIP_VISION:N
+@GLIGENLoader +gligen_name:L -GLIGEN:H
+@LoraLoaderModelOnly +model:M +lora_name:L +strength_model:F -MODEL:M
+@HypernetworkLoader +model:M +hypernetwork_name:L +strength:F -MODEL:M
+@UpscaleModelLoader +model_name:L -UPSCALE_MODEL:U
+@ImageOnlyCheckpointLoader +ckpt_name:L -MODEL:M -CLIP_VISION:N -VAE:V
+
+# mask
+@LoadImageMask +image:L +channel:L -MASK:K
+@MaskToImage +mask:K -IMAGE:G
+@ImageToMask +image:G +channel:L -MASK:K
+@ImageColorToMask +image:G +color:I -MASK:K
+@SolidMask +value:F +width:I +height:I -MASK:K
+@InvertMask +mask:K -MASK:K
+@CropMask +mask:K +x:I +y:I +width:I +height:I -MASK:K
+@MaskComposite +destination:K +source:K +x:I +y:I +operation:L -MASK:K
+@FeatherMask +mask:K +left:I +top:I +right:I +bottom:I -MASK:K
+@GrowMask +mask:K +expand:I +tapered_corners:B -MASK:K
+@ThresholdMask +mask:K +value:F -MASK:K
+@PorterDuffImageComposite +source:G +source_alpha:K +destination:G +destination_alpha:K +mode:L -IMAGE:G -MASK:K
+@SplitImageWithAlpha +image:G -IMAGE:G -MASK:K
+@JoinImageWithAlpha +image:G +alpha:K -IMAGE:G
+
+# model_patches
+@TomePatchModel +model:M +ratio:F -MODEL:M
+@FreeU +model:M +b1:F +b2:F +s1:F +s2:F -MODEL:M
+@FreeU_V2 +model:M +b1:F +b2:F +s1:F +s2:F -MODEL:M
+@HyperTile +model:M +tile_size:I +swap_size:I +max_depth:I +scale_depth:B -MODEL:M
+@PatchModelAddDownscale +model:M +block_number:I +downscale_factor:F +start_percent:F +end_percent:F +downscale_after_skip:B +downscale_method:L +upscale_method:L -MODEL:M
+@PerturbedAttentionGuidance +model:M +scale:F -MODEL:M
+
+# sampling
+@KSampler +model:M +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +latent_image:A +denoise:F -LATENT:A
+@KSamplerAdvanced +model:M +add_noise:L +noise_seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +latent_image:A +start_at_step:I +end_at_step:I +return_with_leftover_noise:L -LATENT:A
+@SamplerCustom +model:M +add_noise:B +noise_seed:I +cfg:F +positive:C +negative:C +sampler:3 +sigmas:0 +latent_image:A -output:A -denoised_output:A
+@BasicScheduler +model:M +scheduler:L +steps:I +denoise:F -SIGMAS:0
+@KarrasScheduler +steps:I +sigma_max:F +sigma_min:F +rho:F -SIGMAS:0
+@ExponentialScheduler +steps:I +sigma_max:F +sigma_min:F -SIGMAS:0
+@PolyexponentialScheduler +steps:I +sigma_max:F +sigma_min:F +rho:F -SIGMAS:0
+@LaplaceScheduler +steps:I +sigma_max:F +sigma_min:F +mu:F +beta:F -SIGMAS:0
+@VPScheduler +steps:I +beta_d:F +beta_min:F +eps_s:F -SIGMAS:0
+@BetaSamplingScheduler +model:M +steps:I +alpha:F +beta:F -SIGMAS:0
+@SDTurboScheduler +model:M +steps:I +denoise:F -SIGMAS:0
+@KSamplerSelect +sampler_name:L -SAMPLER:3
+@SamplerEulerAncestral +eta:F +s_noise:F -SAMPLER:3
+@SamplerEulerAncestralCFGPP +eta:F +s_noise:F -SAMPLER:3
+@SamplerLMS +order:I -SAMPLER:3
+@SamplerDPMPP_3M_SDE +eta:F +s_noise:F +noise_device:L -SAMPLER:3
+@SamplerDPMPP_2M_SDE +solver_type:L +eta:F +s_noise:F +noise_device:L -SAMPLER:3
+@SamplerDPMPP_SDE +eta:F +s_noise:F +r:F +noise_device:L -SAMPLER:3
+@SamplerDPMPP_2S_Ancestral +eta:F +s_noise:F -SAMPLER:3
+@SamplerDPMAdaptative +order:I +rtol:F +atol:F +h_init:F +pcoeff:F +icoeff:F +dcoeff:F +accept_safety:F +eta:F +s_noise:F -SAMPLER:3
+@SplitSigmas +sigmas:0 +step:I -high_sigmas:0 -low_sigmas:0
+@SplitSigmasDenoise +sigmas:0 +denoise:F -high_sigmas:0 -low_sigmas:0
+@FlipSigmas +sigmas:0 -SIGMAS:0
+@SetFirstSigma +sigmas:0 +sigma:F -SIGMAS:0
+@CFGGuider +model:M +positive:C +negative:C +cfg:F -GUIDER:W
+@DualCFGGuider +model:M +cond1:C +cond2:C +negative:C +cfg_conds:F +cfg_cond2_negative:F -GUIDER:W
+@BasicGuider +model:M +conditioning:C -GUIDER:W
+@RandomNoise +noise_seed:I -NOISE:1
+@DisableNoise -NOISE:1
+@SamplerCustomAdvanced +noise:1 +guider:W +sampler:3 +sigmas:0 +latent_image:A -output:A -denoised_output:A
+@VideoLinearCFGGuidance +model:M +min_cfg:F -MODEL:M
+@VideoTriangleCFGGuidance +model:M +min_cfg:F -MODEL:M
+@AlignYourStepsScheduler +model_type:L +steps:I +denoise:F -SIGMAS:0
+@SamplerLCMUpscale +scale_ratio:F +scale_steps:I +upscale_method:L -SAMPLER:3
+@GITSScheduler +coeff:F +steps:I +denoise:F -SIGMAS:0
+@LTXVScheduler +steps:I +max_shift:F +base_shift:F +stretch:B +terminal:F ?latent:A -SIGMAS:0
+
+# stableX
+@LoadStableDelightModel +model:L +device:L -model:DelightMODEL
+@ApplyStableDelight +model:DelightMODEL +images:G +strength:F +resolution:I +upscale_method:L -image:G
+
+# utils
+@PrimitiveString +value:S -STRING:S
+@PrimitiveInt +value:I -INT:I
+@PrimitiveFloat +value:F -FLOAT:F
+@PrimitiveBoolean +value:B -BOOLEAN:B
+@TorchCompileModelAdvanced +model:M +backend:L +compile_mode:L +enabled:B -MODEL:M
+@ImageCompositeMaskedOneByOne +destination:G +source:G +x:I +y:I +resize_source:B +resize_source_mode:L ?mask:K -IMAGE:G
+@LoadImageWithSwitch +image:L ?enabled:B -image:G -mask:K -enabled:B
+@LoadImageMaskWithSwitch +image:L +channel:L ?enabled:B -mask:K -enabled:B
+@LoadImageWithoutListDir +image:L ?enabled:B -image:G -mask:K -enabled:B -filename:S
+@LoadImageMaskWithoutListDir +image:L +channel:L ?enabled:B ?mask_repeat_number:I -mask:K -enabled:B
+@ImageCompositeMaskedWithSwitch +destination:G +source:G +x:I +y:I +resize_source:B ?mask:K ?enabled:B ?invert_mask:B -IMAGE:G
+@ImageBatchOneOrMore +image1:G ?image2:G ?image3:G ?image4:G ?image5:G ?image6:G -IMAGE:G
+@ImageConcanateOfUtils +image1:G +image2:G +direction:L ?image3:G ?image4:G ?image5:G ?image6:G -IMAGE:G
+@UpscaleImageWithModelIfNeed +upscale_model:U +image:G +threshold_of_xl_area:F -IMAGE:G
+@ImageResizeTo8x +pixels:G +action:L +smaller_side:I +larger_side:I +target_width:I +target_height:I +scale_factor:F +resize_mode:L +side_ratio:S +crop_pad_position:F +pad_feathering:I +all_szie_8x:L ?mask_optional:K ?all_size_16x:L -image:G -mask:K -width:I -height:I
+@ImageAutoSelector ?image_prior:G ?image_alternative:G ?image_third:G -image:G
+@ConcatTextOfUtils +text1:S +text2:S +separator:S -STRING:S
+@ModifyTextGender +gender_prior:L +text:S ?gender_prior_weight:F ?gender_alternative:S ?enabled:B -STRING:S
+@GenderControlOutput +gender_prior:L +male_text:S +male_float:F +male_int:I +female_text:S +female_float:F +female_int:I ?gender_alternative:S -gender_text:S -float:F -int:I -is_male:B -is_female:B
+@TextPreview +text:S -STRING:S
+@TextInputAutoSelector +component_input:S ?alternative_input:S -STRING:S
+@BooleanControlOutput +boolean_input:B +true_text:S +true_float:F +true_int:I +false_text:S +false_float:F +false_int:I -text:S -float:F -int:I -is_true:B -is_false:B
+@MatchImageRatioToPreset +image:G +width_offset:I +height_offset:I -standard_width:I -standard_height:I -min:I -max:I
+@FloatMultipleAddLiteral +number:F ?a_aign:L ?a:F ?b:F -x:F -ax + b:F -ax + b(int):I
+@IntMultipleAddLiteral +number:I ?a_aign:L ?a:F ?b:I -x:I -ax + b:I -ax + b(float):F
+@SplitMask +mask_prior:K ?mask_alternative:K -mask:K -mask:K
+@MaskFastGrow +mask:K +invert_mask:B +grow:I +blur:I ?low_limit:F ?high_limit:F ?enabled:B -MASK:K
+@MaskAutoSelector +mask_prior:K ?mask_alternative:K ?mask_third:K -mask:K
+@MaskFromFaceModel +image:G +max_face_number:I +add_bbox_upper_points:B ?faceanalysis:FACEANALYSIS ?face_model:FACE_MODEL ?cant_detect_mask_mode:L ?enabled:B -mask:K -genders:S
+@MaskCoverFourCorners +width:I +height:I +radius:I +draw_top_left:B +draw_top_right:B +draw_bottom_right:B +draw_bottom_left:B ?size_as:G -MASK:K
+@MaskofCenter +width:I +height:I +top:F +bottom:F +left:F +right:F +redius:F ?size_as:G -mask:K -width:I -height:I
+@CheckpointLoaderSimpleWithSwitch +ckpt_name:L ?load_model:B ?load_clip:B ?load_vae:B -MODEL:M -CLIP:P -VAE:V
+@CropByMaskToSpecificSize +image:G +mask:K +invert_mask:B +top_reserve:F +bottom_reserve:F +left_reserve:F +right_reserve:F +width:I +height:I +width_padding_position:L +height_padding_position:L ?crop_box:BOX -croped_image:G -croped_mask:K -crop_box:BOX -box_preview:G
+@DetectorForNSFW +image:G +detect_size:L +provider:L ?model_name:L ?alternative_image:G ?buttocks_exposed:F ?female_breast_exposed:F ?female_genitalia_exposed:F ?anus_exposed:F ?male_genitalia_exposed:F -output_image:G -detect_result:S -filtered_image:G
+@DeepfaceAnalyzeFaceAttributes +image:G +detector_backend:L ?analyze_gender:B ?analyze_race:B ?analyze_emotion:B ?analyze_age:B ?standard_single_face_image:B -gender:S -race:S -emotion:S -age:S -json_info:S
+@ImageCompositeWatermark +destination:G +watermark:G +position:L +resize_ratio:F +margin:I ?mask:K ?enabled:B ?invert_mask:B -IMAGE:G
+@ImageTransition +first_image:G +last_image:G +frames:I +transition_type:L +smooth_effect:F -IMAGE:G
+@GeminiPromptEnhance +prompt:S ?text_input:S ?api_key:S ?proxy:S ?max_output_tokens:I ?temperature:F ?gender_prior:L ?gender_alternative:S ?enabled:B ?request_exception_handle:L -generated_content:S
+@EmptyConditioning -CONDITIONING:C
+@FrameAdjuster +images:G +duration:F +fps:F +remove_frames:I ?extend_tail_frame_if_adjust:B -images:G -frame_count:I -fps:F
+
+# 🧪AILab
+@Segment +image:G +prompt:S +sam_model:L +dino_model:L ?threshold:F ?mask_blur:I ?mask_offset:I ?background_color:L ?invert_output:B -IMAGE:G -MASK:K
+@ClothesSegment +images:G ?Hat:B ?Hair:B ?Face:B ?Sunglasses:B ?Upper-clothes:B ?Skirt:B ?Dress:B ?Belt:B ?Pants:B ?Left-arm:B ?Right-arm:B ?Left-leg:B ?Right-leg:B ?Bag:B ?Scarf:B ?Left-shoe:B ?Right-shoe:B ?Background:B ?process_res:I ?mask_blur:I ?mask_offset:I ?background_color:L ?invert_output:B -IMAGE:G -MASK:K
+@BiRefNetRMBG +image:G +model:L ?mask_blur:I ?mask_offset:I ?background:L ?invert_output:B ?refine_foreground:B -IMAGE:G -MASK:K
+@FaceSegment +images:G ?Skin:B ?Nose:B ?Eyeglasses:B ?Left-eye:B ?Right-eye:B ?Left-eyebrow:B ?Right-eyebrow:B ?Left-ear:B ?Right-ear:B ?Mouth:B ?Upper-lip:B ?Lower-lip:B ?Hair:B ?Earring:B ?Neck:B ?process_res:I ?mask_blur:I ?mask_offset:I ?background_color:L ?invert_output:B -IMAGE:G -MASK:K
+@FashionSegmentAccessories ?hat:B ?glasses:B ?headband, head covering, hair accessory:B ?scarf:B ?tie:B ?glove:B ?watch:B ?belt:B ?leg warmer:B ?bag, wallet:B ?umbrella:B ?collar:B ?lapel:B ?neckline:B ?epaulette:B ?pocket:B ?buckle:B ?zipper:B ?applique:B ?bow:B ?flower:B ?bead:B ?fringe:B ?ribbon:B ?rivet:B ?ruffle:B ?sequin:B ?tassel:B -accessories_options:ACCESSORIES_OPTIONS
+@FashionSegmentClothing +images:G +accessories_options:ACCESSORIES_OPTIONS ?coat:B ?jacket:B ?cardigan:B ?vest:B ?sweater:B ?hood:B ?shirt, blouse:B ?top, t-shirt, sweatshirt:B ?sleeve:B ?dress:B ?jumpsuit:B ?cape:B ?pants:B ?shorts:B ?skirt:B ?tights, stockings:B ?sock:B ?shoe:B ?process_res:I ?mask_blur:I ?mask_offset:I ?background_color:L ?invert_output:B -images:G -mask:K
+@RMBG +image:G +model:L ?sensitivity:F ?process_res:I ?mask_blur:I ?mask_offset:I ?background:L ?invert_output:B ?optimize:L ?refine_foreground:B -IMAGE:G -MASK:K -MASK_IMAGE:G
+@AiLab_LoadImage +image:L +mask_channel:L +scale_by:F +longest_side:I -IMAGE:G -MASK:K -MASK_IMAGE:G -WIDTH:I -HEIGHT:I
+@AiLab_Preview ?image:G ?mask:K -IMAGE:G -MASK:K
+@AiLab_ImagePreview +image:G -IMAGE:G
+@AiLab_MaskPreview +mask:K -MASK:K
+@BodySegment +images:G ?Hair:B ?Glasses:B ?Top-clothes:B ?Bottom-clothes:B ?Torso-skin:B ?Face:B ?Left-arm:B ?Right-arm:B ?Left-leg:B ?Right-leg:B ?Left-foot:B ?Right-foot:B ?mask_blur:I ?mask_offset:I ?background_color:L ?invert_output:B -IMAGE:G -MASK:K

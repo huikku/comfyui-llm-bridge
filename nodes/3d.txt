@@ -1,0 +1,46 @@
+# M=MODEL G=IMAGE C=CONDITIONING A=LATENT V=VAE P=CLIP S=STRING I=INT F=FLOAT B=BOOLEAN K=MASK T=CONTROL_NET L=LIST * for any other type
+# 3d
+@Load3D +model_file:L +image:LOAD_3D +width:I +height:I -image:G -mask:K -mesh_path:S -normal:G -lineart:G
+@Load3DAnimation +model_file:L +image:LOAD_3D_ANIMATION +width:I +height:I -image:G -mask:K -mesh_path:S -normal:G
+@Preview3D +model_file:S
+@Preview3DAnimation +model_file:S
+@VoxelToMeshBasic +voxel:VOXEL +threshold:F -MESH:MESH
+@SaveGLB +mesh:MESH +filename_prefix:S
+
+# pattern-matched
+@Hy3DModelLoader +model:L ?compile_args:HY3DCOMPILEARGS ?attention_mode:L ?cublas_ops:B -pipeline:HY3DMODEL -vae:HY3DVAE
+@Hy3DVAELoader +model_name:L -vae:HY3DVAE
+@Hy3DGenerateMesh +pipeline:HY3DMODEL +image:G +guidance_scale:F +steps:I +seed:I ?mask:K ?scheduler:L ?force_offload:B -latents:HY3DLATENT
+@Hy3DGenerateMeshMultiView +pipeline:HY3DMODEL +guidance_scale:F +steps:I +seed:I ?front:G ?left:G ?right:G ?back:G ?scheduler:L -latents:HY3DLATENT -image:G -mask:K
+@Hy3DExportMesh +trimesh:TRIMESH +filename_prefix:S +file_format:L ?save_file:B -glb_path:S
+@Hy3DDelightImage +delight_pipe:HY3DDIFFUSERSPIPE +image:G +steps:I +width:I +height:I +cfg_image:F +seed:I ?scheduler:NOISESCHEDULER -image:G
+@Hy3DRenderMultiView +trimesh:TRIMESH +render_size:I +texture_size:I ?camera_config:HY3DCAMERA ?normal_space:L -normal_maps:G -position_maps:G -renderer:MESHRENDER -masks:K
+@Hy3DBakeFromMultiview +images:G +renderer:MESHRENDER ?camera_config:HY3DCAMERA -texture:G -mask:K -renderer:MESHRENDER
+@Hy3DTorchCompileSettings +backend:L +fullgraph:B +mode:L +dynamic:B +dynamo_cache_size_limit:I +compile_transformer:B +compile_vae:B -torch_compile_args:HY3DCOMPILEARGS
+@Hy3DPostprocessMesh +trimesh:TRIMESH +remove_floaters:B +remove_degenerate_faces:B +reduce_faces:B +max_facenum:I +smooth_normals:B -trimesh:TRIMESH
+@Hy3DLoadMesh +glb_path:S -trimesh:TRIMESH
+@Hy3DUploadMesh +mesh:L -trimesh:TRIMESH
+@Hy3DCameraConfig +camera_azimuths:S +camera_elevations:S +view_weights:S +camera_distance:F +ortho_scale:F -camera_config:HY3DCAMERA
+@Hy3DMeshUVWrap +trimesh:TRIMESH -trimesh:TRIMESH
+@Hy3DSampleMultiView +pipeline:HY3DDIFFUSERSPIPE +ref_image:G +normal_maps:G +position_maps:G +view_size:I +steps:I +seed:I ?camera_config:HY3DCAMERA ?scheduler:NOISESCHEDULER ?denoise_strength:F ?samples:A -image:G
+@Hy3DMeshVerticeInpaintTexture +texture:G +mask:K +renderer:MESHRENDER -texture:G -mask:K -renderer:MESHRENDER
+@Hy3DApplyTexture +texture:G +renderer:MESHRENDER -trimesh:TRIMESH
+@Hy3DRenderMultiViewDepth +trimesh:TRIMESH +render_size:I +texture_size:I ?camera_config:HY3DCAMERA -depth_maps:G -masks:K
+@Hy3DGetMeshPBRTextures +trimesh:TRIMESH +texture:L -image:G
+@Hy3DSetMeshPBRTextures +trimesh:TRIMESH +image:G +texture:L -trimesh:TRIMESH
+@Hy3DSetMeshPBRAttributes +trimesh:TRIMESH +baseColorFactor:F +emissiveFactor:F +metallicFactor:F +roughnessFactor:F +doubleSided:B -trimesh:TRIMESH
+@Hy3DVAEDecode +vae:HY3DVAE +latents:HY3DLATENT +box_v:F +octree_resolution:I +num_chunks:I +mc_level:F +mc_algo:L ?enable_flash_vdm:B ?force_offload:B -trimesh:TRIMESH
+@Hy3DRenderSingleView +trimesh:TRIMESH +render_type:L +render_size:I +camera_type:L +camera_distance:F +pan_x:F +pan_y:F +ortho_scale:F +azimuth:F +elevation:F +bg_color:S -image:G -mask:K
+@Hy3DDiffusersSchedulerConfig +pipeline:HY3DDIFFUSERSPIPE +scheduler:L +sigmas:L -diffusers_scheduler:NOISESCHEDULER
+@Hy3DIMRemesh +trimesh:TRIMESH +merge_vertices:B +vertex_count:I +smooth_iter:I +align_to_boundaries:B +triangulate_result:B +max_facenum:I -trimesh:TRIMESH
+@Hy3DBPT +trimesh:TRIMESH +enable_bpt:B +seed:I +temperature:F +pc_num:I +samples:I -trimesh:TRIMESH
+@Hy3DMeshInfo +trimesh:TRIMESH -trimesh:TRIMESH -vertices:I -faces:I
+@Hy3DFastSimplifyMesh +trimesh:TRIMESH +target_count:I +aggressiveness:I +max_iterations:I +update_rate:I +preserve_border:B +lossless:B +threshold_lossless:F -trimesh:TRIMESH
+@Hy3DNvdiffrastRenderer +trimesh:TRIMESH +render_type:L +width:I +height:I +ssaa:I +num_frames:I +camera_distance:F +yaw:F +pitch:F +fov:F +near:F +far:F +pan_x:F +pan_y:F -image:G -mask:K
+@MediaPipeFaceMeshToSEGS +image:G +crop_factor:F +bbox_fill:B +crop_min_size:I +drop_size:I +dilation:I +face:B +mouth:B +left_eyebrow:B +left_eye:B +left_pupil:B +right_eyebrow:B +right_eye:B +right_pupil:B -SEGS:SEGS
+@TripoAPIDraft +mode:L +apikey:S ?prompt:S ?image:G ?image_left:G ?image_back:G ?image_right:G ?model_version:L ?style:L ?texture:B ?pbr:B ?image_seed:I ?model_seed:I ?texture_seed:I ?texture_quality:L ?texture_alignment:L ?face_limit:I ?quad:B -model_file:S -model task_id:MODEL_TASK_ID -API KEY:API_KEY
+@TripoTextureModel +model_task_id:MODEL_TASK_ID +apikey:API_KEY ?texture:B ?pbr:B ?texture_seed:I ?texture_quality:L ?texture_alignment:L -model_file:S -model task_id:MODEL_TASK_ID
+@TripoRefineModel +model_task_id:MODEL_TASK_ID +apikey:API_KEY -model_file:S -model task_id:MODEL_TASK_ID
+@TripoAnimateRigNode +original_model_task_id:MODEL_TASK_ID +apikey:API_KEY -model_file:S -rig task_id:RIG_TASK_ID
+@TripoAnimateRetargetNode +original_model_task_id:RIG_TASK_ID +animation:L +apikey:API_KEY -model_file:S -retarget task_id:RETARGET_TASK_ID
+@TripoConvertNode +original_model_task_id:MODEL_TASK_ID,RIG_TASK_ID,RETARGET_TASK_ID +format:L +apikey:API_KEY ?quad:B ?face_limit:I ?texture_size:I ?texture_format:L

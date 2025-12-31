@@ -1,0 +1,13 @@
+# M=MODEL G=IMAGE C=CONDITIONING A=LATENT V=VAE P=CLIP S=STRING I=INT F=FLOAT B=BOOLEAN K=MASK T=CONTROL_NET L=LIST * for any other type
+# pattern-matched
+@HunyuanImageToVideo +positive:C +vae:V +width:I +height:I +length:I +batch_size:I +guidance_type:L ?start_image:G -positive:C -latent:A
+@LTXVImgToVideo +positive:C +negative:C +vae:V +image:G +width:I +height:I +length:I +batch_size:I -positive:C -negative:C -latent:A
+@LTXVConditioning +positive:C +negative:C +frame_rate:F -positive:C -negative:C
+@LTXVScheduler +steps:I +max_shift:F +base_shift:F +stretch:B +terminal:F ?latent:A -SIGMAS:0
+@LTXVAddGuide +positive:C +negative:C +vae:V +latent:A +image:G +frame_idx:I +strength:F -positive:C -negative:C -latent:A
+@LTXVPreprocess +image:G +img_compression:I -output_image:G
+@LTXVCropGuides +positive:C +negative:C +latent:A -positive:C -negative:C -latent:A
+@CosmosImageToVideoLatent +vae:V +width:I +height:I +length:I +batch_size:I ?start_image:G ?end_image:G -LATENT:A
+@WanImageToVideo +positive:C +negative:C +vae:V +width:I +height:I +length:I +batch_size:I ?clip_vision_output:O ?start_image:G -positive:C -negative:C -latent:A
+@Hunyuan3Dv2Conditioning +clip_vision_output:O -positive:C -negative:C
+@Hunyuan3Dv2ConditioningMultiView ?front:O ?left:O ?back:O ?right:O -positive:C -negative:C

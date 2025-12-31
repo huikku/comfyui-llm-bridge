@@ -1,0 +1,210 @@
+# M=MODEL G=IMAGE C=CONDITIONING A=LATENT V=VAE P=CLIP S=STRING I=INT F=FLOAT B=BOOLEAN K=MASK T=CONTROL_NET L=LIST * for any other type
+# 🧪AILab
+@Segment +image:G +prompt:S +sam_model:L +dino_model:L ?threshold:F ?mask_blur:I ?mask_offset:I ?background_color:L ?invert_output:B -IMAGE:G -MASK:K
+@ClothesSegment +images:G ?Hat:B ?Hair:B ?Face:B ?Sunglasses:B ?Upper-clothes:B ?Skirt:B ?Dress:B ?Belt:B ?Pants:B ?Left-arm:B ?Right-arm:B ?Left-leg:B ?Right-leg:B ?Bag:B ?Scarf:B ?Left-shoe:B ?Right-shoe:B ?Background:B ?process_res:I ?mask_blur:I ?mask_offset:I ?background_color:L ?invert_output:B -IMAGE:G -MASK:K
+@BiRefNetRMBG +image:G +model:L ?mask_blur:I ?mask_offset:I ?background:L ?invert_output:B ?refine_foreground:B -IMAGE:G -MASK:K
+@FaceSegment +images:G ?Skin:B ?Nose:B ?Eyeglasses:B ?Left-eye:B ?Right-eye:B ?Left-eyebrow:B ?Right-eyebrow:B ?Left-ear:B ?Right-ear:B ?Mouth:B ?Upper-lip:B ?Lower-lip:B ?Hair:B ?Earring:B ?Neck:B ?process_res:I ?mask_blur:I ?mask_offset:I ?background_color:L ?invert_output:B -IMAGE:G -MASK:K
+@FashionSegmentAccessories ?hat:B ?glasses:B ?headband, head covering, hair accessory:B ?scarf:B ?tie:B ?glove:B ?watch:B ?belt:B ?leg warmer:B ?bag, wallet:B ?umbrella:B ?collar:B ?lapel:B ?neckline:B ?epaulette:B ?pocket:B ?buckle:B ?zipper:B ?applique:B ?bow:B ?flower:B ?bead:B ?fringe:B ?ribbon:B ?rivet:B ?ruffle:B ?sequin:B ?tassel:B -accessories_options:ACCESSORIES_OPTIONS
+@FashionSegmentClothing +images:G +accessories_options:ACCESSORIES_OPTIONS ?coat:B ?jacket:B ?cardigan:B ?vest:B ?sweater:B ?hood:B ?shirt, blouse:B ?top, t-shirt, sweatshirt:B ?sleeve:B ?dress:B ?jumpsuit:B ?cape:B ?pants:B ?shorts:B ?skirt:B ?tights, stockings:B ?sock:B ?shoe:B ?process_res:I ?mask_blur:I ?mask_offset:I ?background_color:L ?invert_output:B -images:G -mask:K
+@RMBG +image:G +model:L ?sensitivity:F ?process_res:I ?mask_blur:I ?mask_offset:I ?background:L ?invert_output:B ?optimize:L ?refine_foreground:B -IMAGE:G -MASK:K -MASK_IMAGE:G
+@AiLab_LoadImage +image:L +mask_channel:L +scale_by:F +longest_side:I -IMAGE:G -MASK:K -MASK_IMAGE:G -WIDTH:I -HEIGHT:I
+@AiLab_Preview ?image:G ?mask:K -IMAGE:G -MASK:K
+@AiLab_ImagePreview +image:G -IMAGE:G
+@AiLab_MaskPreview +mask:K -MASK:K
+@BodySegment +images:G ?Hair:B ?Glasses:B ?Top-clothes:B ?Bottom-clothes:B ?Torso-skin:B ?Face:B ?Left-arm:B ?Right-arm:B ?Left-leg:B ?Right-leg:B ?Left-foot:B ?Right-foot:B ?mask_blur:I ?mask_offset:I ?background_color:L ?invert_output:B -IMAGE:G -MASK:K
+
+# ImpactPack
+@SAMLoader +model_name:L +device_mode:L -SAM_MODEL:Q
+@CLIPSegDetectorProvider +text:S +blur:F +threshold:F +dilation_factor:I -BBOX_DETECTOR:X
+@ONNXDetectorProvider +model_name:L -BBOX_DETECTOR:X
+@BitwiseAndMaskForEach +base_segs:SEGS +mask_segs:SEGS -SEGS:SEGS
+@SubtractMaskForEach +base_segs:SEGS +mask_segs:SEGS -SEGS:SEGS
+@DetailerForEach +image:G +segs:SEGS +model:M +clip:P +vae:V +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +feather:I +noise_mask:B +force_inpaint:B +wildcard:S +cycle:I ?detailer_hook:DETAILER_HOOK ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -IMAGE:G
+@DetailerForEachDebug +image:G +segs:SEGS +model:M +clip:P +vae:V +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +feather:I +noise_mask:B +force_inpaint:B +wildcard:S +cycle:I ?detailer_hook:DETAILER_HOOK ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -image:G -cropped:G -cropped_refined:G -cropped_refined_alpha:G -cnet_images:G
+@DetailerForEachPipe +image:G +segs:SEGS +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +noise_mask:B +force_inpaint:B +basic_pipe:E +wildcard:S +refiner_ratio:F +cycle:I ?detailer_hook:DETAILER_HOOK ?refiner_basic_pipe_opt:E ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -image:G -segs:SEGS -basic_pipe:E -cnet_images:G
+@DetailerForEachDebugPipe +image:G +segs:SEGS +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +noise_mask:B +force_inpaint:B +basic_pipe:E +wildcard:S +refiner_ratio:F +cycle:I ?detailer_hook:DETAILER_HOOK ?refiner_basic_pipe_opt:E ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -image:G -segs:SEGS -basic_pipe:E -cropped:G -cropped_refined:G -cropped_refined_alpha:G -cnet_images:G
+@DetailerForEachPipeForAnimateDiff +image_frames:G +segs:SEGS +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +basic_pipe:E +refiner_ratio:F ?detailer_hook:DETAILER_HOOK ?refiner_basic_pipe_opt:E ?noise_mask_feather:I ?scheduler_func_opt:R -image:G -segs:SEGS -basic_pipe:E -cnet_images:G
+@SAMDetectorCombined +sam_model:Q +segs:SEGS +image:G +detection_hint:L +dilation:I +threshold:F +bbox_expansion:I +mask_hint_threshold:F +mask_hint_use_negative:L -MASK:K
+@SAMDetectorSegmented +sam_model:Q +segs:SEGS +image:G +detection_hint:L +dilation:I +threshold:F +bbox_expansion:I +mask_hint_threshold:F +mask_hint_use_negative:L -combined_mask:K -batch_masks:K
+@FaceDetailer +image:G +model:M +clip:P +vae:V +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +feather:I +noise_mask:B +force_inpaint:B +bbox_threshold:F +bbox_dilation:I +bbox_crop_factor:F +sam_detection_hint:L +sam_dilation:I +sam_threshold:F +sam_bbox_expansion:I +sam_mask_hint_threshold:F +sam_mask_hint_use_negative:L +drop_size:I +bbox_detector:X +wildcard:S +cycle:I ?sam_model_opt:Q ?segm_detector_opt:Z ?detailer_hook:DETAILER_HOOK ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -image:G -cropped_refined:G -cropped_enhanced_alpha:G -mask:K -detailer_pipe:D -cnet_images:G
+@FaceDetailerPipe +image:G +detailer_pipe:D +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +noise_mask:B +force_inpaint:B +bbox_threshold:F +bbox_dilation:I +bbox_crop_factor:F +sam_detection_hint:L +sam_dilation:I +sam_threshold:F +sam_bbox_expansion:I +sam_mask_hint_threshold:F +sam_mask_hint_use_negative:L +drop_size:I +refiner_ratio:F +cycle:I ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R ?tiled_encode:B ?tiled_decode:B -image:G -cropped_refined:G -cropped_enhanced_alpha:G -mask:K -detailer_pipe:D -cnet_images:G
+@MaskDetailerPipe +image:G +mask:K +basic_pipe:E +guide_size:F +guide_size_for:B +max_size:F +mask_mode:B +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +crop_factor:F +drop_size:I +refiner_ratio:F +batch_size:I +cycle:I ?refiner_basic_pipe_opt:E ?detailer_hook:DETAILER_HOOK ?inpaint_model:B ?noise_mask_feather:I ?bbox_fill:B ?contour_fill:B ?scheduler_func_opt:R -image:G -cropped_refined:G -cropped_enhanced_alpha:G -basic_pipe:E -refiner_basic_pipe_opt:E
+@ToDetailerPipe +model:M +clip:P +vae:V +positive:C +negative:C +bbox_detector:X +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?sam_model_opt:Q ?segm_detector_opt:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@ToDetailerPipeSDXL +model:M +clip:P +vae:V +positive:C +negative:C +refiner_model:M +refiner_clip:P +refiner_positive:C +refiner_negative:C +bbox_detector:X +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?sam_model_opt:Q ?segm_detector_opt:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@FromDetailerPipe +detailer_pipe:D -model:M -clip:P -vae:V -positive:C -negative:C -bbox_detector:X -sam_model_opt:Q -segm_detector_opt:Z -detailer_hook:DETAILER_HOOK
+@FromDetailerPipe_v2 +detailer_pipe:D -detailer_pipe:D -model:M -clip:P -vae:V -positive:C -negative:C -bbox_detector:X -sam_model_opt:Q -segm_detector_opt:Z -detailer_hook:DETAILER_HOOK
+@FromDetailerPipeSDXL +detailer_pipe:D -detailer_pipe:D -model:M -clip:P -vae:V -positive:C -negative:C -bbox_detector:X -sam_model_opt:Q -segm_detector_opt:Z -detailer_hook:DETAILER_HOOK -refiner_model:M -refiner_clip:P -refiner_positive:C -refiner_negative:C
+@AnyPipeToBasic +any_pipe:* -basic_pipe:E
+@ToBasicPipe +model:M +clip:P +vae:V +positive:C +negative:C -basic_pipe:E
+@FromBasicPipe +basic_pipe:E -model:M -clip:P -vae:V -positive:C -negative:C
+@FromBasicPipe_v2 +basic_pipe:E -basic_pipe:E -model:M -clip:P -vae:V -positive:C -negative:C
+@BasicPipeToDetailerPipe +basic_pipe:E +bbox_detector:X +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?sam_model_opt:Q ?segm_detector_opt:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@BasicPipeToDetailerPipeSDXL +base_basic_pipe:E +refiner_basic_pipe:E +bbox_detector:X +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?sam_model_opt:Q ?segm_detector_opt:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@DetailerPipeToBasicPipe +detailer_pipe:D -base_basic_pipe:E -refiner_basic_pipe:E
+@EditBasicPipe +basic_pipe:E ?model:M ?clip:P ?vae:V ?positive:C ?negative:C -basic_pipe:E
+@EditDetailerPipe +detailer_pipe:D +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?model:M ?clip:P ?vae:V ?positive:C ?negative:C ?bbox_detector:X ?sam_model:Q ?segm_detector:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@EditDetailerPipeSDXL +detailer_pipe:D +wildcard:S +Select to add LoRA:L +Select to add Wildcard:L ?model:M ?clip:P ?vae:V ?positive:C ?negative:C ?refiner_model:M ?refiner_clip:P ?refiner_positive:C ?refiner_negative:C ?bbox_detector:X ?sam_model:Q ?segm_detector:Z ?detailer_hook:DETAILER_HOOK -detailer_pipe:D
+@LatentPixelScale +samples:A +scale_method:L +scale_factor:F +vae:V +use_tiled_vae:B ?upscale_model_opt:U -LATENT:A -IMAGE:G
+@PixelKSampleUpscalerProvider +scale_method:L +model:M +vae:V +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +use_tiled_vae:B +tile_size:I ?upscale_model_opt:U ?pk_hook_opt:J ?scheduler_func_opt:R -UPSCALER:UPSCALER
+@PixelKSampleUpscalerProviderPipe +scale_method:L +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +use_tiled_vae:B +basic_pipe:E +tile_size:I ?upscale_model_opt:U ?pk_hook_opt:J ?scheduler_func_opt:R ?tile_cnet_opt:T ?tile_cnet_strength:F -UPSCALER:UPSCALER
+@IterativeLatentUpscale +samples:A +upscale_factor:F +steps:I +temp_prefix:S +upscaler:UPSCALER +step_mode:L -latent:A -vae:V
+@IterativeImageUpscale +pixels:G +upscale_factor:F +steps:I +temp_prefix:S +upscaler:UPSCALER +vae:V +step_mode:L -image:G
+@PixelTiledKSampleUpscalerProvider +scale_method:L +model:M +vae:V +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +tile_width:I +tile_height:I +tiling_strategy:L ?upscale_model_opt:U ?pk_hook_opt:J ?tile_cnet_opt:T ?tile_cnet_strength:F ?overlap:I -UPSCALER:UPSCALER
+@PixelTiledKSampleUpscalerProviderPipe +scale_method:L +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +tile_width:I +tile_height:I +tiling_strategy:L +basic_pipe:E ?upscale_model_opt:U ?pk_hook_opt:J ?tile_cnet_opt:T ?tile_cnet_strength:F -UPSCALER:UPSCALER
+@TwoSamplersForMaskUpscalerProvider +scale_method:L +full_sample_schedule:L +use_tiled_vae:B +base_sampler:KSAMPLER +mask_sampler:KSAMPLER +mask:K +vae:V +tile_size:I ?full_sampler_opt:KSAMPLER ?upscale_model_opt:U ?pk_hook_base_opt:J ?pk_hook_mask_opt:J ?pk_hook_full_opt:J -UPSCALER:UPSCALER
+@TwoSamplersForMaskUpscalerProviderPipe +scale_method:L +full_sample_schedule:L +use_tiled_vae:B +base_sampler:KSAMPLER +mask_sampler:KSAMPLER +mask:K +basic_pipe:E +tile_size:I ?full_sampler_opt:KSAMPLER ?upscale_model_opt:U ?pk_hook_base_opt:J ?pk_hook_mask_opt:J ?pk_hook_full_opt:J -UPSCALER:UPSCALER
+@PixelKSampleHookCombine +hook1:J +hook2:J -PK_HOOK:J
+@DenoiseScheduleHookProvider +schedule_for_iteration:L +target_denoise:F -PK_HOOK:J
+@StepsScheduleHookProvider +schedule_for_iteration:L +target_steps:I -PK_HOOK:J
+@CfgScheduleHookProvider +schedule_for_iteration:L +target_cfg:F -PK_HOOK:J
+@NoiseInjectionHookProvider +schedule_for_iteration:L +source:L +seed:I +start_strength:F +end_strength:F -PK_HOOK:J
+@UnsamplerHookProvider +model:M +steps:I +start_end_at_step:I +end_end_at_step:I +cfg:F +sampler_name:L +scheduler:L +normalize:L +positive:C +negative:C +schedule_for_iteration:L -PK_HOOK:J
+@CoreMLDetailerHookProvider +mode:L -DETAILER_HOOK:DETAILER_HOOK
+@PreviewDetailerHookProvider +quality:I -DETAILER_HOOK:DETAILER_HOOK -UPSCALER_HOOK:UPSCALER_HOOK
+@DetailerHookCombine +hook1:DETAILER_HOOK +hook2:DETAILER_HOOK -DETAILER_HOOK:DETAILER_HOOK
+@NoiseInjectionDetailerHookProvider +schedule_for_cycle:L +source:L +seed:I +start_strength:F +end_strength:F -DETAILER_HOOK:DETAILER_HOOK
+@UnsamplerDetailerHookProvider +model:M +steps:I +start_end_at_step:I +end_end_at_step:I +cfg:F +sampler_name:L +scheduler:L +normalize:L +positive:C +negative:C +schedule_for_cycle:L -DETAILER_HOOK:DETAILER_HOOK
+@DenoiseSchedulerDetailerHookProvider +schedule_for_cycle:L +target_denoise:F -DETAILER_HOOK:DETAILER_HOOK
+@SEGSOrderedFilterDetailerHookProvider +target:L +order:B +take_start:I +take_count:I -DETAILER_HOOK:DETAILER_HOOK
+@SEGSRangeFilterDetailerHookProvider +target:L +mode:B +min_value:I +max_value:I -DETAILER_HOOK:DETAILER_HOOK
+@SEGSLabelFilterDetailerHookProvider +segs:SEGS +preset:L +labels:S -DETAILER_HOOK:DETAILER_HOOK
+@VariationNoiseDetailerHookProvider +seed:I +strength:F -DETAILER_HOOK:DETAILER_HOOK
+@BitwiseAndMask +mask1:K +mask2:K -MASK:K
+@SubtractMask +mask1:K +mask2:K -MASK:K
+@AddMask +mask1:K +mask2:K -MASK:K
+@MaskRectArea -MASK:K
+@MaskRectAreaAdvanced -MASK:K
+@ImpactSegsAndMask +segs:SEGS +mask:K -SEGS:SEGS
+@ImpactSegsAndMaskForEach +segs:SEGS +masks:K -SEGS:SEGS
+@EmptySegs -SEGS:SEGS
+@ImpactFlattenMask +masks:K -MASK:K
+@MediaPipeFaceMeshToSEGS +image:G +crop_factor:F +bbox_fill:B +crop_min_size:I +drop_size:I +dilation:I +face:B +mouth:B +left_eyebrow:B +left_eye:B +left_pupil:B +right_eyebrow:B +right_eye:B +right_pupil:B -SEGS:SEGS
+@MaskToSEGS +mask:K +combined:B +crop_factor:F +bbox_fill:B +drop_size:I +contour_fill:B -SEGS:SEGS
+@MaskToSEGS_for_AnimateDiff +mask:K +combined:B +crop_factor:F +bbox_fill:B +drop_size:I +contour_fill:B -SEGS:SEGS
+@ToBinaryMask +mask:K +threshold:I -MASK:K
+@MasksToMaskList +masks:K -MASK:K
+@MaskListToMaskBatch +mask:K -MASK:K
+@ImageListToImageBatch +images:G -IMAGE:G
+@SetDefaultImageForSEGS +segs:SEGS +image:G +override:B -SEGS:SEGS
+@RemoveImageFromSEGS +segs:SEGS -SEGS:SEGS
+@BboxDetectorSEGS +bbox_detector:X +image:G +threshold:F +dilation:I +crop_factor:F +drop_size:I +labels:S ?detailer_hook:DETAILER_HOOK -SEGS:SEGS
+@SegmDetectorSEGS +segm_detector:Z +image:G +threshold:F +dilation:I +crop_factor:F +drop_size:I +labels:S ?detailer_hook:DETAILER_HOOK -SEGS:SEGS
+@ONNXDetectorSEGS +bbox_detector:X +image:G +threshold:F +dilation:I +crop_factor:F +drop_size:I +labels:S ?detailer_hook:DETAILER_HOOK -SEGS:SEGS
+@ImpactSimpleDetectorSEGS_for_AD +bbox_detector:X +image_frames:G +bbox_threshold:F +bbox_dilation:I +crop_factor:F +drop_size:I +sub_threshold:F +sub_dilation:I +sub_bbox_expansion:I +sam_mask_hint_threshold:F ?masking_mode:L ?segs_pivot:L ?sam_model_opt:Q ?segm_detector_opt:Z -SEGS:SEGS
+@ImpactSimpleDetectorSEGS +bbox_detector:X +image:G +bbox_threshold:F +bbox_dilation:I +crop_factor:F +drop_size:I +sub_threshold:F +sub_dilation:I +sub_bbox_expansion:I +sam_mask_hint_threshold:F ?post_dilation:I ?sam_model_opt:Q ?segm_detector_opt:Z -SEGS:SEGS
+@ImpactSimpleDetectorSEGSPipe +detailer_pipe:D +image:G +bbox_threshold:F +bbox_dilation:I +crop_factor:F +drop_size:I +sub_threshold:F +sub_dilation:I +sub_bbox_expansion:I +sam_mask_hint_threshold:F ?post_dilation:I -SEGS:SEGS
+@ImpactControlNetApplySEGS +segs:SEGS +control_net:T +strength:F ?segs_preprocessor:SEGS_PREPROCESSOR ?control_image:G -SEGS:SEGS
+@ImpactControlNetApplyAdvancedSEGS +segs:SEGS +control_net:T +strength:F +start_percent:F +end_percent:F ?segs_preprocessor:SEGS_PREPROCESSOR ?control_image:G ?vae:V -SEGS:SEGS
+@ImpactControlNetClearSEGS +segs:SEGS -SEGS:SEGS
+@ImpactIPAdapterApplySEGS +segs:SEGS +ipadapter_pipe:IPADAPTER_PIPE +weight:F +noise:F +weight_type:L +start_at:F +end_at:F +unfold_batch:B +faceid_v2:B +weight_v2:F +context_crop_factor:F +reference_image:G ?combine_embeds:L ?neg_image:G -SEGS:SEGS
+@ImpactDecomposeSEGS +segs:SEGS -SEGS_HEADER:SEGS_HEADER -SEG_ELT:SEG_ELT
+@ImpactAssembleSEGS +seg_header:SEGS_HEADER +seg_elt:SEG_ELT -SEGS:SEGS
+@ImpactFrom_SEG_ELT +seg_elt:SEG_ELT -seg_elt:SEG_ELT -cropped_image:G -cropped_mask:K -crop_region:SEG_ELT_crop_region -bbox:SEG_ELT_bbox -control_net_wrapper:SEG_ELT_control_net_wrapper -confidence:F -label:S
+@ImpactEdit_SEG_ELT +seg_elt:SEG_ELT ?cropped_image_opt:G ?cropped_mask_opt:K ?crop_region_opt:SEG_ELT_crop_region ?bbox_opt:SEG_ELT_bbox ?control_net_wrapper_opt:SEG_ELT_control_net_wrapper ?confidence_opt:F ?label_opt:S -SEG_ELT:SEG_ELT
+@ImpactDilate_Mask_SEG_ELT +seg_elt:SEG_ELT +dilation:I -SEG_ELT:SEG_ELT
+@ImpactDilateMask +mask:K +dilation:I -MASK:K
+@ImpactGaussianBlurMask +mask:K +kernel_size:I +sigma:F -MASK:K
+@ImpactDilateMaskInSEGS +segs:SEGS +dilation:I -SEGS:SEGS
+@ImpactGaussianBlurMaskInSEGS +segs:SEGS +kernel_size:I +sigma:F -SEGS:SEGS
+@ImpactScaleBy_BBOX_SEG_ELT +seg:SEG_ELT +scale_by:F -SEG_ELT:SEG_ELT
+@ImpactFrom_SEG_ELT_bbox +bbox:SEG_ELT_bbox -left:I -top:I -right:I -bottom:I
+@ImpactFrom_SEG_ELT_crop_region +crop_region:SEG_ELT_crop_region -left:I -top:I -right:I -bottom:I
+@ImpactCount_Elts_in_SEGS +segs:SEGS -INT:I
+@BboxDetectorCombined_v2 +bbox_detector:X +image:G +threshold:F +dilation:I -MASK:K
+@SegmDetectorCombined_v2 +segm_detector:Z +image:G +threshold:F +dilation:I -MASK:K
+@SegsToCombinedMask +segs:SEGS -MASK:K
+@KSamplerProvider +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +basic_pipe:E ?scheduler_func_opt:R -KSAMPLER:KSAMPLER
+@TwoSamplersForMask +latent_image:A +base_sampler:KSAMPLER +mask_sampler:KSAMPLER +mask:K -LATENT:A
+@TiledKSamplerProvider +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +tile_width:I +tile_height:I +tiling_strategy:L +basic_pipe:E -KSAMPLER:KSAMPLER
+@KSamplerAdvancedProvider +cfg:F +sampler_name:L +scheduler:L +sigma_factor:F +basic_pipe:E ?sampler_opt:3 ?scheduler_func_opt:R -KSAMPLER_ADVANCED:KSAMPLER_ADVANCED
+@TwoAdvancedSamplersForMask +seed:I +steps:I +denoise:F +samples:A +base_sampler:KSAMPLER_ADVANCED +mask_sampler:KSAMPLER_ADVANCED +mask:K +overlap_factor:I -LATENT:A
+@ImpactNegativeConditioningPlaceholder -CONDITIONING:C
+@PreviewBridge +images:G +image:S ?block:B ?restore_mask:L -IMAGE:G -MASK:K
+@PreviewBridgeLatent +latent:A +image:S +preview_method:L ?vae_opt:V ?block:B ?restore_mask:L -LATENT:A -MASK:K
+@ImageSender +images:G +filename_prefix:S +link_id:I
+@ImageReceiver +image:L +link_id:I +save_to_workflow:B +image_data:S +trigger_always:B -IMAGE:G -MASK:K
+@LatentSender +samples:A +filename_prefix:S +link_id:I +preview_method:L
+@LatentReceiver +latent:L +link_id:I +trigger_always:B -LATENT:A
+@ImageMaskSwitch +select:I +images1:G ?mask1_opt:K ?images2_opt:G ?mask2_opt:K ?images3_opt:G ?mask3_opt:K ?images4_opt:G ?mask4_opt:K -IMAGE:G -MASK:K
+@LatentSwitch +select:I +sel_mode:B ?input1:* -selected_value:* -selected_label:S -selected_index:I
+@SEGSSwitch +select:I +sel_mode:B ?input1:* -selected_value:* -selected_label:S -selected_index:I
+@ImpactSwitch +select:I +sel_mode:B ?input1:* -selected_value:* -selected_label:S -selected_index:I
+@ImpactInversedSwitch +select:I +input:* ?sel_mode:B -*:*
+@ImpactWildcardProcessor +wildcard_text:S +populated_text:S +mode:L +seed:I +Select to add Wildcard:L -processed text:S
+@ImpactWildcardEncode +model:M +clip:P +wildcard_text:S +populated_text:S +mode:L +Select to add LoRA:L +Select to add Wildcard:L +seed:I -model:M -clip:P -conditioning:C -populated_text:S
+@SEGSUpscaler +image:G +segs:SEGS +model:M +clip:P +vae:V +rescale_factor:F +resampling_method:L +supersample:L +rounding_modulus:I +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +positive:C +negative:C +denoise:F +feather:I +inpaint_model:B +noise_mask_feather:I ?upscale_model_opt:U ?upscaler_hook_opt:UPSCALER_HOOK ?scheduler_func_opt:R -IMAGE:G
+@SEGSUpscalerPipe +image:G +segs:SEGS +basic_pipe:E +rescale_factor:F +resampling_method:L +supersample:L +rounding_modulus:I +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +feather:I +inpaint_model:B +noise_mask_feather:I ?upscale_model_opt:U ?upscaler_hook_opt:UPSCALER_HOOK ?scheduler_func_opt:R -IMAGE:G
+@SEGSDetailer +image:G +segs:SEGS +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +noise_mask:B +force_inpaint:B +basic_pipe:E +refiner_ratio:F +batch_size:I +cycle:I ?refiner_basic_pipe_opt:E ?inpaint_model:B ?noise_mask_feather:I ?scheduler_func_opt:R -segs:SEGS -cnet_images:G
+@SEGSPaste +image:G +segs:SEGS +feather:I +alpha:I ?ref_image_opt:G -IMAGE:G
+@SEGSPreview +segs:SEGS +alpha_mode:B +min_alpha:F ?fallback_image_opt:G -IMAGE:G
+@SEGSPreviewCNet +segs:SEGS -IMAGE:G
+@SEGSToImageList +segs:SEGS ?fallback_image_opt:G -IMAGE:G
+@ImpactSEGSToMaskList +segs:SEGS -MASK:K
+@ImpactSEGSToMaskBatch +segs:SEGS -MASK:K
+@ImpactSEGSConcat +segs1:SEGS -SEGS:SEGS
+@ImpactSEGSPicker +picks:S +segs:SEGS ?fallback_image_opt:G -SEGS:SEGS
+@ImpactMakeTileSEGS +images:G +bbox_size:I +crop_factor:F +min_overlap:I +filter_segs_dilation:I +mask_irregularity:F +irregular_mask_mode:L ?filter_in_segs_opt:SEGS ?filter_out_segs_opt:SEGS -SEGS:SEGS
+@ImpactSEGSMerge +segs:SEGS -SEGS:SEGS
+@SEGSDetailerForAnimateDiff +image_frames:G +segs:SEGS +guide_size:F +guide_size_for:B +max_size:F +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +denoise:F +basic_pipe:E +refiner_ratio:F ?refiner_basic_pipe_opt:E ?noise_mask_feather:I ?scheduler_func_opt:R -segs:SEGS -cnet_images:G
+@ImpactKSamplerBasicPipe +basic_pipe:E +seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +latent_image:A +denoise:F ?scheduler_func_opt:R -BASIC_PIPE:E -LATENT:A -VAE:V
+@ImpactKSamplerAdvancedBasicPipe +basic_pipe:E +add_noise:B +noise_seed:I +steps:I +cfg:F +sampler_name:L +scheduler:L +latent_image:A +start_at_step:I +end_at_step:I +return_with_leftover_noise:B ?scheduler_func_opt:R -BASIC_PIPE:E -LATENT:A -VAE:V
+@ReencodeLatent +samples:A +tile_mode:L +input_vae:V +output_vae:V +tile_size:I ?overlap:I -LATENT:A
+@ReencodeLatentPipe +samples:A +tile_mode:L +input_basic_pipe:E +output_basic_pipe:E -LATENT:A
+@ImpactImageBatchToImageList +image:G -IMAGE:G
+@ImpactMakeImageList +image1:G -IMAGE:G
+@ImpactMakeImageBatch +image1:G -IMAGE:G
+@ImpactMakeAnyList ?value1:* -*:*
+@ImpactMakeMaskList +mask1:K -MASK:K
+@ImpactMakeMaskBatch +mask1:K -MASK:K
+@RegionalSampler +seed:I +seed_2nd:I +seed_2nd_mode:L +steps:I +base_only_steps:I +denoise:F +samples:A +base_sampler:KSAMPLER_ADVANCED +regional_prompts:REGIONAL_PROMPTS +overlap_factor:I +restore_latent:B +additional_mode:L +additional_sampler:L +additional_sigma_ratio:F -LATENT:A
+@RegionalSamplerAdvanced +add_noise:B +noise_seed:I +steps:I +start_at_step:I +end_at_step:I +overlap_factor:I +restore_latent:B +return_with_leftover_noise:B +latent_image:A +base_sampler:KSAMPLER_ADVANCED +regional_prompts:REGIONAL_PROMPTS +additional_mode:L +additional_sampler:L +additional_sigma_ratio:F -LATENT:A
+@CombineRegionalPrompts +regional_prompts1:REGIONAL_PROMPTS -REGIONAL_PROMPTS:REGIONAL_PROMPTS
+@RegionalPrompt +mask:K +advanced_sampler:KSAMPLER_ADVANCED ?variation_seed:I ?variation_strength:F ?variation_method:L -REGIONAL_PROMPTS:REGIONAL_PROMPTS
+@ImpactCombineConditionings +conditioning1:C -CONDITIONING:C
+@ImpactConcatConditionings +conditioning1:C -CONDITIONING:C
+@ImpactSEGSLabelAssign +segs:SEGS +labels:S -SEGS:SEGS
+@ImpactSEGSLabelFilter +segs:SEGS +preset:L +labels:S -filtered_SEGS:SEGS -remained_SEGS:SEGS
+@ImpactSEGSRangeFilter +segs:SEGS +target:L +mode:B +min_value:I +max_value:I -filtered_SEGS:SEGS -remained_SEGS:SEGS
+@ImpactSEGSOrderedFilter +segs:SEGS +target:L +order:B +take_start:I +take_count:I -filtered_SEGS:SEGS -remained_SEGS:SEGS
+@ImpactCompare +cmp:L +a:* +b:* -BOOLEAN:B
+@ImpactConditionalBranch +cond:B +tt_value:* +ff_value:* -*:*
+@ImpactConditionalBranchSelMode +cond:B ?tt_value:* ?ff_value:* -*:*
+@ImpactIfNone ?signal:* ?any_input:* -signal_opt:* -bool:B
+@ImpactConvertDataType +value:* -STRING:S -FLOAT:F -INT:I -BOOLEAN:B
+@ImpactLogicalOperators +operator:L +bool_a:B +bool_b:B -BOOLEAN:B
+@ImpactInt +value:I -INT:I
+@ImpactFloat +value:F -FLOAT:F
+@ImpactBoolean +value:B -BOOLEAN:B
+@ImpactValueSender +value:* +link_id:I ?signal_opt:* -signal:*
+@ImpactValueReceiver +typ:L +value:S +link_id:I -*:*
+@ImpactImageInfo +value:G -batch:I -height:I -width:I -channel:I
+@ImpactLatentInfo +value:A -batch:I -height:I -width:I -channel:I
+@ImpactMinMax +mode:B +a:* +b:* -INT:I
+@ImpactNeg +value:B -BOOLEAN:B
+@ImpactConditionalStopIteration +cond:B
+@ImpactStringSelector +strings:S +multiline:B +select:I -STRING:S
+@StringListToString +join_with:S +string_list:S -STRING:S
+@WildcardPromptFromString +string:S +delimiter:S +prefix_all:S +postfix_all:S +restrict_to_tags:S +exclude_tags:S -wildcard:S -segs_labels:S
+@ImpactExecutionOrderController +signal:* +value:* -signal:* -value:*
+@ImpactListBridge +list_input:* -list_output:*
+@RemoveNoiseMask +samples:A -LATENT:A
+@ImpactLogger +data:* +text:S
+@ImpactDummyInput -*:*
+@ImpactQueueTrigger +signal:* +mode:B -signal_opt:*
+@ImpactQueueTriggerCountdown +count:I +total:I +mode:B ?signal:* -signal_opt:* -count:I -total:I
+@ImpactSetWidgetValue +signal:* +node_id:I +widget_name:S ?boolean_value:B ?int_value:I ?float_value:F ?string_value:S -signal_opt:*
+@ImpactNodeSetMuteState +signal:* +node_id:I +set_state:B -signal_opt:*
+@ImpactControlBridge +value:* +mode:B +behavior:L -value:*
+@ImpactIsNotEmptySEGS +segs:SEGS -BOOLEAN:B
+@ImpactSleep +signal:* +seconds:F -signal_opt:*
+@ImpactRemoteBoolean +node_id:I +widget_name:S +value:B
+@ImpactRemoteInt +node_id:I +widget_name:S +value:I
+@ImpactHFTransformersClassifierProvider +preset_repo_id:L +manual_repo_id:S +device_mode:L -TRANSFORMERS_CLASSIFIER:TRANSFORMERS_CLASSIFIER
+@ImpactSEGSClassify +classifier:TRANSFORMERS_CLASSIFIER +segs:SEGS +preset_expr:L +manual_expr:S ?ref_image_opt:G -filtered_SEGS:SEGS -remained_SEGS:SEGS -detected_labels:S
+@ImpactSchedulerAdapter +scheduler:L +extra_scheduler:L -scheduler:*
+@GITSSchedulerFuncProvider +coeff:F +denoise:F -SCHEDULER_FUNC:R
+@UltralyticsDetectorProvider +model_name:L -BBOX_DETECTOR:X -SEGM_DETECTOR:Z
+
+# pattern-matched
+@MaskFromSegmentation+ +image:G +segments:I +remove_isolated_pixels:I +remove_small_masks:F +fill_holes:B -MASK:K
+@DetectorForNSFW +image:G +detect_size:L +provider:L ?model_name:L ?alternative_image:G ?buttocks_exposed:F ?female_breast_exposed:F ?female_genitalia_exposed:F ?anus_exposed:F ?male_genitalia_exposed:F -output_image:G -detect_result:S -filtered_image:G
