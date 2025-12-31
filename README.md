@@ -8,6 +8,17 @@ A portable package that enables LLM-assisted ComfyUI workflow generation with li
 - **Node Compression**: Reduces token usage by 80%+ with compact notation
 - **Domain Splitting**: Generates focused files for different workflow types
 - **Antigravity Integration**: Workflow file for seamless IDE integration
+- **Custom Node Guidance**: LLM can suggest installing node packs or write new nodes
+
+## LLM Capabilities
+
+When using this with an LLM (via Antigravity or directly), the LLM can:
+
+1. **Generate valid workflows** using only your installed nodes
+2. **Recommend node packs** if your workflow needs functionality you don't have
+3. **Write custom nodes** from scratch if no existing node fits your needs
+
+All suggestions require user approval before installation or code generation.
 
 ## Quick Start
 
