@@ -1,10 +1,10 @@
 # M=MODEL G=IMAGE C=CONDITIONING A=LATENT V=VAE P=CLIP S=STRING I=INT F=FLOAT B=BOOLEAN K=MASK T=CONTROL_NET L=LIST * for any other type
 # advanced
-@CLIPLoader +clip_name:L +type:L ?device:L -CLIP:P
-@UNETLoader +unet_name:L +weight_dtype:L -MODEL:M
-@DualCLIPLoader +clip_name1:L +clip_name2:L +type:L ?device:L -CLIP:P
-@CheckpointLoader +config_name:L +ckpt_name:L -MODEL:M -CLIP:P -VAE:V
-@DiffusersLoader +model_path:L -MODEL:M -CLIP:P -VAE:V
+@CLIPLoader +clip_name:[] +type:[stable_diffusion|stable_cascade|sd3|stable_audio|mochi|ltxv|pixart|cosmos|lumina2|wan] ?device:[default|cpu] -CLIP:P
+@UNETLoader +unet_name:[] +weight_dtype:[default|fp8_e4m3fn|fp8_e4m3fn_fast|fp8_e5m2] -MODEL:M
+@DualCLIPLoader +clip_name1:[] +clip_name2:[] +type:[sdxl|sd3|flux|hunyuan_video] ?device:[default|cpu] -CLIP:P
+@CheckpointLoader +config_name:L +ckpt_name:[SD1.5/v1-5-pruned-emaonly.ckpt|hunyuan3d-dit-v2-0-fp16.safetensors|hunyuan3d-dit-v2-mv-turbo.safetensors|hunyuan3d-dit-v2-mv.safetensors|hunyuan3d-dit-v2.safetensors|model.fp16.safetensors|sd_xl_base_1.0.safetensors|sd_xl_refiner_1.0.safetensors|stable_zero123.ckpt|v1-5-pruned-emaonly-fp16.safetensors] -MODEL:M -CLIP:P -VAE:V
+@DiffusersLoader +model_path:[hunyuan3d-delight-v2-0] -MODEL:M -CLIP:P -VAE:V
 @ConditioningZeroOut +conditioning:C -CONDITIONING:C
 @ConditioningSetTimestepRange +conditioning:C +start:F +end:F -CONDITIONING:C
 @ModelMergeSimple +model1:M +model2:M +ratio:F -MODEL:M
@@ -20,15 +20,15 @@
 @ModelSave +model:M +filename_prefix:S
 @CLIPTextEncodeSDXLRefiner +ascore:F +width:I +height:I +text:S +clip:P -CONDITIONING:C
 @CLIPTextEncodeSDXL +clip:P +width:I +height:I +crop_w:I +crop_h:I +target_width:I +target_height:I +text_g:S +text_l:S -CONDITIONING:C
-@ModelSamplingDiscrete +model:M +sampling:L +zsnr:B -MODEL:M
-@ModelSamplingContinuousEDM +model:M +sampling:L +sigma_max:F +sigma_min:F -MODEL:M
-@ModelSamplingContinuousV +model:M +sampling:L +sigma_max:F +sigma_min:F -MODEL:M
+@ModelSamplingDiscrete +model:M +sampling:[eps|v_prediction|lcm|x0|img_to_img] +zsnr:B -MODEL:M
+@ModelSamplingContinuousEDM +model:M +sampling:[v_prediction|edm|edm_playground_v2.5|eps] +sigma_max:F +sigma_min:F -MODEL:M
+@ModelSamplingContinuousV +model:M +sampling:[v_prediction] +sigma_max:F +sigma_min:F -MODEL:M
 @ModelSamplingStableCascade +model:M +shift:F -MODEL:M
 @ModelSamplingSD3 +model:M +shift:F -MODEL:M
 @ModelSamplingAuraFlow +model:M +shift:F -MODEL:M
 @ModelSamplingFlux +model:M +max_shift:F +base_shift:F +width:I +height:I -MODEL:M
 @RescaleCFG +model:M +multiplier:F -MODEL:M
-@ModelComputeDtype +model:M +dtype:L -MODEL:M
+@ModelComputeDtype +model:M +dtype:[default|fp32|fp16|bf16] -MODEL:M
 @ImageOnlyCheckpointSave +model:M +clip_vision:N +vae:V +filename_prefix:S
 @CLIPTextEncodePixArtAlpha +width:I +height:I +text:S +clip:P -CONDITIONING:C
 @ModelMergeSD1 +model1:M +model2:M +time_embed.:F +label_emb.:F +input_blocks.0.:F +input_blocks.1.:F +input_blocks.2.:F +input_blocks.3.:F +input_blocks.4.:F +input_blocks.5.:F +input_blocks.6.:F +input_blocks.7.:F +input_blocks.8.:F +input_blocks.9.:F +input_blocks.10.:F +input_blocks.11.:F +middle_block.0.:F +middle_block.1.:F +middle_block.2.:F +output_blocks.0.:F +output_blocks.1.:F +output_blocks.2.:F +output_blocks.3.:F +output_blocks.4.:F +output_blocks.5.:F +output_blocks.6.:F +output_blocks.7.:F +output_blocks.8.:F +output_blocks.9.:F +output_blocks.10.:F +output_blocks.11.:F +out.:F -MODEL:M
@@ -42,8 +42,8 @@
 @ModelMergeLTXV +model1:M +model2:M +patchify_proj.:F +adaln_single.:F +caption_projection.:F +transformer_blocks.0.:F +transformer_blocks.1.:F +transformer_blocks.2.:F +transformer_blocks.3.:F +transformer_blocks.4.:F +transformer_blocks.5.:F +transformer_blocks.6.:F +transformer_blocks.7.:F +transformer_blocks.8.:F +transformer_blocks.9.:F +transformer_blocks.10.:F +transformer_blocks.11.:F +transformer_blocks.12.:F +transformer_blocks.13.:F +transformer_blocks.14.:F +transformer_blocks.15.:F +transformer_blocks.16.:F +transformer_blocks.17.:F +transformer_blocks.18.:F +transformer_blocks.19.:F +transformer_blocks.20.:F +transformer_blocks.21.:F +transformer_blocks.22.:F +transformer_blocks.23.:F +transformer_blocks.24.:F +transformer_blocks.25.:F +transformer_blocks.26.:F +transformer_blocks.27.:F +scale_shift_table:F +proj_out.:F -MODEL:M
 @ModelMergeCosmos7B +model1:M +model2:M +pos_embedder.:F +extra_pos_embedder.:F +x_embedder.:F +t_embedder.:F +affline_norm.:F +blocks.block0.:F +blocks.block1.:F +blocks.block2.:F +blocks.block3.:F +blocks.block4.:F +blocks.block5.:F +blocks.block6.:F +blocks.block7.:F +blocks.block8.:F +blocks.block9.:F +blocks.block10.:F +blocks.block11.:F +blocks.block12.:F +blocks.block13.:F +blocks.block14.:F +blocks.block15.:F +blocks.block16.:F +blocks.block17.:F +blocks.block18.:F +blocks.block19.:F +blocks.block20.:F +blocks.block21.:F +blocks.block22.:F +blocks.block23.:F +blocks.block24.:F +blocks.block25.:F +blocks.block26.:F +blocks.block27.:F +final_layer.:F -MODEL:M
 @ModelMergeCosmos14B +model1:M +model2:M +pos_embedder.:F +extra_pos_embedder.:F +x_embedder.:F +t_embedder.:F +affline_norm.:F +blocks.block0.:F +blocks.block1.:F +blocks.block2.:F +blocks.block3.:F +blocks.block4.:F +blocks.block5.:F +blocks.block6.:F +blocks.block7.:F +blocks.block8.:F +blocks.block9.:F +blocks.block10.:F +blocks.block11.:F +blocks.block12.:F +blocks.block13.:F +blocks.block14.:F +blocks.block15.:F +blocks.block16.:F +blocks.block17.:F +blocks.block18.:F +blocks.block19.:F +blocks.block20.:F +blocks.block21.:F +blocks.block22.:F +blocks.block23.:F +blocks.block24.:F +blocks.block25.:F +blocks.block26.:F +blocks.block27.:F +blocks.block28.:F +blocks.block29.:F +blocks.block30.:F +blocks.block31.:F +blocks.block32.:F +blocks.block33.:F +blocks.block34.:F +blocks.block35.:F +final_layer.:F -MODEL:M
-@TripleCLIPLoader +clip_name1:L +clip_name2:L +clip_name3:L -CLIP:P
-@CLIPTextEncodeSD3 +clip:P +clip_l:S +clip_g:S +t5xxl:S +empty_padding:L -CONDITIONING:C
+@TripleCLIPLoader +clip_name1:[] +clip_name2:[] +clip_name3:[] -CLIP:P
+@CLIPTextEncodeSD3 +clip:P +clip_l:S +clip_g:S +t5xxl:S +empty_padding:[none|empty_prompt] -CONDITIONING:C
 @SkipLayerGuidanceSD3 +model:M +layers:S +scale:F +start_percent:F +end_percent:F -MODEL:M
 @CLIPTextEncodeHunyuanDiT +clip:P +bert:S +mt5xl:S -CONDITIONING:C
 @TextEncodeHunyuanVideo_ImageToVideo +clip:P +clip_vision_output:O +prompt:S +image_interleave:I -CONDITIONING:C
@@ -52,21 +52,21 @@
 @FluxDisableGuidance +conditioning:C -CONDITIONING:C
 @SkipLayerGuidanceDiT +model:M +double_layers:S +single_layers:S +scale:F +start_percent:F +end_percent:F +rescaling_scale:F -MODEL:M
 @ModelSamplingLTXV +model:M +max_shift:F +base_shift:F ?latent:A -MODEL:M
-@CreateHookLora +lora_name:L +strength_model:F +strength_clip:F ?prev_hooks:4 -HOOKS:4
-@CreateHookLoraModelOnly +lora_name:L +strength_model:F ?prev_hooks:4 -HOOKS:4
-@CreateHookModelAsLora +ckpt_name:L +strength_model:F +strength_clip:F ?prev_hooks:4 -HOOKS:4
-@CreateHookModelAsLoraModelOnly +ckpt_name:L +strength_model:F ?prev_hooks:4 -HOOKS:4
+@CreateHookLora +lora_name:[] +strength_model:F +strength_clip:F ?prev_hooks:4 -HOOKS:4
+@CreateHookLoraModelOnly +lora_name:[] +strength_model:F ?prev_hooks:4 -HOOKS:4
+@CreateHookModelAsLora +ckpt_name:[SD1.5/v1-5-pruned-emaonly.ckpt|hunyuan3d-dit-v2-0-fp16.safetensors|hunyuan3d-dit-v2-mv-turbo.safetensors|hunyuan3d-dit-v2-mv.safetensors|hunyuan3d-dit-v2.safetensors|model.fp16.safetensors|sd_xl_base_1.0.safetensors|sd_xl_refiner_1.0.safetensors|stable_zero123.ckpt|v1-5-pruned-emaonly-fp16.safetensors] +strength_model:F +strength_clip:F ?prev_hooks:4 -HOOKS:4
+@CreateHookModelAsLoraModelOnly +ckpt_name:[SD1.5/v1-5-pruned-emaonly.ckpt|hunyuan3d-dit-v2-0-fp16.safetensors|hunyuan3d-dit-v2-mv-turbo.safetensors|hunyuan3d-dit-v2-mv.safetensors|hunyuan3d-dit-v2.safetensors|model.fp16.safetensors|sd_xl_base_1.0.safetensors|sd_xl_refiner_1.0.safetensors|stable_zero123.ckpt|v1-5-pruned-emaonly-fp16.safetensors] +strength_model:F ?prev_hooks:4 -HOOKS:4
 @SetHookKeyframes +hooks:4 ?hook_kf:HOOK_KEYFRAMES -HOOKS:4
 @CreateHookKeyframe +strength_mult:F +start_percent:F ?prev_hook_kf:HOOK_KEYFRAMES -HOOK_KF:HOOK_KEYFRAMES
-@CreateHookKeyframesInterpolated +strength_start:F +strength_end:F +interpolation:L +start_percent:F +end_percent:F +keyframes_count:I +print_keyframes:B ?prev_hook_kf:HOOK_KEYFRAMES -HOOK_KF:HOOK_KEYFRAMES
+@CreateHookKeyframesInterpolated +strength_start:F +strength_end:F +interpolation:[linear|ease_in|ease_out|ease_in_out] +start_percent:F +end_percent:F +keyframes_count:I +print_keyframes:B ?prev_hook_kf:HOOK_KEYFRAMES -HOOK_KF:HOOK_KEYFRAMES
 @CreateHookKeyframesFromFloats +floats_strength:FLOATS +start_percent:F +end_percent:F +print_keyframes:B ?prev_hook_kf:HOOK_KEYFRAMES -HOOK_KF:HOOK_KEYFRAMES
 @CombineHooks2 ?hooks_A:4 ?hooks_B:4 -HOOKS:4
 @CombineHooks4 ?hooks_A:4 ?hooks_B:4 ?hooks_C:4 ?hooks_D:4 -HOOKS:4
 @CombineHooks8 ?hooks_A:4 ?hooks_B:4 ?hooks_C:4 ?hooks_D:4 ?hooks_E:4 ?hooks_F:4 ?hooks_G:4 ?hooks_H:4 -HOOKS:4
-@ConditioningSetProperties +cond_NEW:C +strength:F +set_cond_area:L ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -CONDITIONING:C
-@ConditioningSetPropertiesAndCombine +cond:C +cond_NEW:C +strength:F +set_cond_area:L ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -CONDITIONING:C
-@PairConditioningSetProperties +positive_NEW:C +negative_NEW:C +strength:F +set_cond_area:L ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -positive:C -negative:C
-@PairConditioningSetPropertiesAndCombine +positive:C +negative:C +positive_NEW:C +negative_NEW:C +strength:F +set_cond_area:L ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -positive:C -negative:C
+@ConditioningSetProperties +cond_NEW:C +strength:F +set_cond_area:[default|mask bounds] ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -CONDITIONING:C
+@ConditioningSetPropertiesAndCombine +cond:C +cond_NEW:C +strength:F +set_cond_area:[default|mask bounds] ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -CONDITIONING:C
+@PairConditioningSetProperties +positive_NEW:C +negative_NEW:C +strength:F +set_cond_area:[default|mask bounds] ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -positive:C -negative:C
+@PairConditioningSetPropertiesAndCombine +positive:C +negative:C +positive_NEW:C +negative_NEW:C +strength:F +set_cond_area:[default|mask bounds] ?mask:K ?hooks:4 ?timesteps:TIMESTEPS_RANGE -positive:C -negative:C
 @ConditioningSetDefaultCombine +cond:C +cond_DEFAULT:C ?hooks:4 -CONDITIONING:C
 @PairConditioningSetDefaultCombine +positive:C +negative:C +positive_DEFAULT:C +negative_DEFAULT:C ?hooks:4 -positive:C -negative:C
 @PairConditioningCombine +positive_A:C +negative_A:C +positive_B:C +negative_B:C -positive:C -negative:C
@@ -78,13 +78,13 @@
 @LatentBlend +samples1:A +samples2:A +blend_factor:F -LATENT:A
 @VAEDecodeTiled +samples:A +vae:V +tile_size:I +overlap:I +temporal_size:I +temporal_overlap:I -IMAGE:G
 @VAEEncodeTiled +pixels:G +vae:V +tile_size:I +overlap:I +temporal_size:I +temporal_overlap:I -LATENT:A
-@LoadLatent +latent:L -LATENT:A
+@LoadLatent +latent:[] -LATENT:A
 @SaveLatent +samples:A +filename_prefix:S
 @AddNoise +model:M +noise:1 +sigmas:0 +latent_image:A -LATENT:A
 @SelfAttentionGuidance +model:M +scale:F +blur_sigma:F -MODEL:M
 @PerpNeg +model:M +empty_conditioning:C +neg_scale:F -MODEL:M
 @PerpNegGuider +model:M +positive:C +negative:C +empty_conditioning:C +cfg:F +neg_scale:F -GUIDER:W
-@PhotoMakerLoader +photomaker_model_name:L -PHOTOMAKER:PHOTOMAKER
+@PhotoMakerLoader +photomaker_model_name:[] -PHOTOMAKER:PHOTOMAKER
 @PhotoMakerEncode +photomaker:PHOTOMAKER +image:G +clip:P +text:S -CONDITIONING:C
 @CLIPTextEncodeControlnet +clip:P +conditioning:C +text:S -CONDITIONING:C
 @StableCascade_SuperResolutionControlnet +image:G +vae:V -controlnet_input:G -stage_c:A -stage_b:A
@@ -93,9 +93,9 @@
 @UNetCrossAttentionMultiply +model:M +q:F +k:F +v:F +out:F -MODEL:M
 @CLIPAttentionMultiply +clip:P +q:F +k:F +v:F +out:F -CLIP:P
 @UNetTemporalAttentionMultiply +model:M +self_structural:F +self_temporal:F +cross_structural:F +cross_temporal:F -MODEL:M
-@SamplerEulerCFGpp +version:L -SAMPLER:3
-@LoraSave +filename_prefix:S +rank:I +lora_type:L +bias_diff:B ?model_diff:M ?text_encoder_diff:P
-@TorchCompileModel +model:M +backend:L -MODEL:M
+@SamplerEulerCFGpp +version:[regular|alternative] -SAMPLER:3
+@LoraSave +filename_prefix:S +rank:I +lora_type:[standard|full_diff] +bias_diff:B ?model_diff:M ?text_encoder_diff:P
+@TorchCompileModel +model:M +backend:[inductor|cudagraphs] -MODEL:M
 @Mahiro +model:M -patched_model:M
 
 # model_patches
@@ -103,5 +103,5 @@
 @FreeU +model:M +b1:F +b2:F +s1:F +s2:F -MODEL:M
 @FreeU_V2 +model:M +b1:F +b2:F +s1:F +s2:F -MODEL:M
 @HyperTile +model:M +tile_size:I +swap_size:I +max_depth:I +scale_depth:B -MODEL:M
-@PatchModelAddDownscale +model:M +block_number:I +downscale_factor:F +start_percent:F +end_percent:F +downscale_after_skip:B +downscale_method:L +upscale_method:L -MODEL:M
+@PatchModelAddDownscale +model:M +block_number:I +downscale_factor:F +start_percent:F +end_percent:F +downscale_after_skip:B +downscale_method:[bicubic|nearest-exact|bilinear|area|bislerp] +upscale_method:[bicubic|nearest-exact|bilinear|area|bislerp] -MODEL:M
 @PerturbedAttentionGuidance +model:M +scale:F -MODEL:M

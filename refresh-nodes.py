@@ -75,6 +75,18 @@ def get_type_code(type_name):
     return TYPE_CODES.get(type_name, type_name)
 
 
+def format_enum(values, max_options=10):
+    """Format enum values inline if short enough, otherwise return L."""
+    if not isinstance(values, list):
+        return "L"
+    if len(values) <= max_options:
+        # Short enum - expand inline
+        return "[" + "|".join(str(v) for v in values) + "]"
+    else:
+        # Long enum - just mark as list
+        return "L"
+
+
 def compress_node(node_name, node_data):
     """Compress a single node definition to compact format."""
     node_line = f"@{node_name}"
@@ -86,26 +98,33 @@ def compress_node(node_name, node_data):
         if isinstance(required, dict):
             for input_name, input_info in required.items():
                 type_name = "UNKNOWN"
+                type_str = None
                 if isinstance(input_info, list) and len(input_info) > 0:
                     potential_type = input_info[0]
                     if isinstance(potential_type, list):
-                        type_name = "COMBO"
+                        # This is a COMBO/dropdown - try to expand short enums
+                        type_str = format_enum(potential_type)
                     elif isinstance(potential_type, str):
                         type_name = potential_type
-                node_line += f" +{input_name}:{get_type_code(type_name)}"
+                if type_str is None:
+                    type_str = get_type_code(type_name)
+                node_line += f" +{input_name}:{type_str}"
         
-        # Optional inputs
         optional = node_data['input'].get('optional', {})
         if isinstance(optional, dict):
             for input_name, input_info in optional.items():
                 type_name = "UNKNOWN"
+                type_str = None
                 if isinstance(input_info, list) and len(input_info) > 0:
                     potential_type = input_info[0]
                     if isinstance(potential_type, list):
-                        type_name = "COMBO"
+                        # This is a COMBO/dropdown - try to expand short enums
+                        type_str = format_enum(potential_type)
                     elif isinstance(potential_type, str):
                         type_name = potential_type
-                node_line += f" ?{input_name}:{get_type_code(type_name)}"
+                if type_str is None:
+                    type_str = get_type_code(type_name)
+                node_line += f" ?{input_name}:{type_str}"
     
     # Process outputs
     output_names = node_data.get('output_name', [])

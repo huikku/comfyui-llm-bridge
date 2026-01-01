@@ -6,4 +6,4 @@
 @FluxGuidance +conditioning:C +guidance:F -CONDITIONING:C
 @FluxDisableGuidance +conditioning:C -CONDITIONING:C
 @FluxSamplerParams+ +model:M +conditioning:C +latent_image:A +noise:S +sampler:S +scheduler:S +steps:S +guidance:S +max_shift:S +base_shift:S +split_sigmas:S +denoise:S -latent:A -params:SAMPLER_PARAMS
-@GeminiPromptEnhance +prompt:S ?text_input:S ?api_key:S ?proxy:S ?max_output_tokens:I ?temperature:F ?gender_prior:L ?gender_alternative:S ?enabled:B ?request_exception_handle:L -generated_content:S
+@GeminiPromptEnhance +prompt:S ?text_input:S ?api_key:S ?proxy:S ?max_output_tokens:I ?temperature:F ?gender_prior:[|M|F] ?gender_alternative:S ?enabled:B ?request_exception_handle:[bypass|raise_exception|output_exception] -generated_content:S
