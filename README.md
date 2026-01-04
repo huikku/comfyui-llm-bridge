@@ -65,17 +65,29 @@ Drop this bridge into any ComfyUI installation and the included Antigravity work
 # Clone into your ComfyUI directory
 cd /path/to/ComfyUI
 git clone https://github.com/huikku/comfyui-llm-bridge.git
-
-# Ensure ComfyUI is running, then test the connection
-python comfyui-llm-bridge/refresh-nodes.py
 ```
 
-### Usage with Antigravity
+### Recommended Workflow
 
-1. Open your ComfyUI folder in Antigravity IDE
-2. Type `/comfyui` in the chat to invoke the workflow
-3. Describe what you want to generate
-4. The agent builds a valid workflow using your installed nodes
+**Open your ComfyUI folder in Antigravity IDE** — this gives the agent access to your models, custom nodes, and the bridge together in one workspace.
+
+```
+ComfyUI/
+├── models/
+├── custom_nodes/
+├── comfyui-llm-bridge/     ← Clone this repo here
+│   ├── nodes/
+│   ├── refresh-nodes.py
+│   └── .agent/workflows/
+└── ...
+```
+
+### Usage
+
+1. **Open ComfyUI folder** in Antigravity IDE as your workspace
+2. **Ensure ComfyUI is running** (the bridge needs to query it)
+3. **Type `/comfyui`** in the chat to invoke the workflow
+4. **Describe what you want** — the agent handles the rest
 
 **Example prompts:**
 - "Generate an img2img workflow with ControlNet depth"
