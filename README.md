@@ -65,6 +65,9 @@ Drop this bridge into any ComfyUI installation and the included Antigravity work
 # Clone into your ComfyUI directory
 cd /path/to/ComfyUI
 git clone https://github.com/huikku/comfyui-llm-bridge.git
+
+# Copy the .agent folder to ComfyUI root (required for Antigravity to detect workflows)
+cp -r comfyui-llm-bridge/.agent .
 ```
 
 ### Recommended Workflow
@@ -73,14 +76,18 @@ git clone https://github.com/huikku/comfyui-llm-bridge.git
 
 ```
 ComfyUI/
+├── .agent/                     ← Workflows must be at root level
+│   └── workflows/
+│       └── comfyui.md
 ├── models/
 ├── custom_nodes/
-├── comfyui-llm-bridge/     ← Clone this repo here
+├── comfyui-llm-bridge/
 │   ├── nodes/
-│   ├── refresh-nodes.py
-│   └── .agent/workflows/
+│   └── refresh-nodes.py
 └── ...
 ```
+
+> **Note:** Antigravity only detects `.agent/workflows/` at the workspace root, which is why we copy it up from the cloned repo.
 
 ### Usage
 
