@@ -301,6 +301,7 @@ Edit `category-map.json` to customize domain splitting:
 
 ## Related Projects
 
+- [ComfyUI LLM Tools](https://huikku.github.io/comfyui-llm-tools/) — **Parent project** with a web UI for browser-based node compression and FlowZip workflow conversion
 - [ComfyUI](https://github.com/comfyanonymous/ComfyUI) — The node-based Stable Diffusion interface
 - [Antigravity IDE](https://antigravity.google) — Google's agent-first development environment
 
